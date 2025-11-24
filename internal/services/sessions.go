@@ -2,17 +2,24 @@ package services
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/alexanderramin/kalistheniks/internal/models"
-	"github.com/alexanderramin/kalistheniks/internal/repositories"
 )
 
-type SessionService struct {
-	sessions repositories.SessionRepository
+type SessionRepository interface {
+	Create(ctx context.Context, s models.Session) (models.Session, error)
+	AddSet(ctx context.Context, set models.Set) (models.Set, error)
+	ListWithSets(ctx context.Context, userID string) ([]models.Session, error)
+	SessionBelongsToUser(ctx context.Context, sessionID, userID string) (bool, error)
 }
 
-func NewSessionService(repo repositories.SessionRepository) *SessionService {
+type SessionService struct {
+	sessions SessionRepository
+}
+
+func NewSessionService(repo SessionRepository) *SessionService {
 	return &SessionService{sessions: repo}
 }
 
@@ -33,6 +40,14 @@ func (s *SessionService) CreateSession(ctx context.Context, userID string, perfo
 }
 
 func (s *SessionService) AddSet(ctx context.Context, userID, sessionID, exerciseID string, setIndex, reps int, weight float64, rpe *int) (models.Set, error) {
+	owned, err := s.sessions.SessionBelongsToUser(ctx, sessionID, userID)
+	if err != nil {
+		return models.Set{}, err
+	}
+	if !owned {
+		return models.Set{}, errors.New("session does not belong to user")
+	}
+
 	set := models.Set{
 		SessionID:  sessionID,
 		ExerciseID: exerciseID,
@@ -41,7 +56,6 @@ func (s *SessionService) AddSet(ctx context.Context, userID, sessionID, exercise
 		WeightKG:   weight,
 		RPE:        rpe,
 	}
-	// TODO: verify session belongs to user before inserting.
 	return s.sessions.AddSet(ctx, set)
 }
 

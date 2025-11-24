@@ -14,6 +14,7 @@ type SessionRepository interface {
 	ListWithSets(ctx context.Context, userID string) ([]models.Session, error)
 	GetLastSet(ctx context.Context, userID string) (models.Set, error)
 	GetLastSession(ctx context.Context, userID string) (models.Session, error)
+	SessionBelongsToUser(ctx context.Context, sessionID, userID string) (bool, error)
 }
 
 type sessionRepo struct {
@@ -168,4 +169,21 @@ LIMIT 1`
 		s.SessionType = &sessionType.String
 	}
 	return s, err
+}
+
+func (r *sessionRepo) SessionBelongsToUser(ctx context.Context, sessionID, userID string) (bool, error) {
+	const q = `
+SELECT 1
+FROM sessions
+WHERE id = $1 AND user_id = $2`
+
+	var exists int
+	err := r.db.QueryRowContext(ctx, q, sessionID, userID).Scan(&exists)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }

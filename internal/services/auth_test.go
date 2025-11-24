@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//go:generate mockgen -source=auth.go -destination=../services/mocks/auth_mock.go -package=mocks AuthService
+//go:generate mockgen -source=auth.go -destination=../services/mocks/services_mock.go -package=mocks AuthService
 
 type authDeps struct {
 	ctrl      *gomock.Controller
