@@ -32,7 +32,6 @@ func main() {
 
 	userRepo := repositories.NewUserRepository(database)
 	sessionRepo := repositories.NewSessionRepository(database)
-
 	authService := services.NewAuthService(userRepo, cfg.JWTSecret)
 	sessionService := services.NewSessionService(sessionRepo)
 	planService := services.NewPlanService(sessionRepo)

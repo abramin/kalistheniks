@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/alexanderramin/kalistheniks/internal/auth"
 	"github.com/alexanderramin/kalistheniks/internal/models"
 	"github.com/alexanderramin/kalistheniks/internal/repositories"
 	"golang.org/x/crypto/bcrypt"
@@ -14,15 +15,10 @@ type UserRepository interface {
 	Create(ctx context.Context, email, passwordHash string) (models.User, error)
 	FindByEmail(ctx context.Context, email string) (models.User, error)
 }
-type Auth interface {
-	GenerateToken(userID, secret string) (string, error)
-	ParseToken(token, secret string) (string, error)
-}
 
 type AuthService struct {
 	users     UserRepository
 	jwtSecret string
-	auth      Auth
 }
 
 // TODO: move errors to relevant packages
@@ -35,11 +31,10 @@ var (
 	ErrParseToken         = errors.New("failed to parse token")
 )
 
-func NewAuthService(users repositories.UserRepository, jwtSecret string, auth Auth) *AuthService {
+func NewAuthService(users repositories.UserRepository, jwtSecret string) *AuthService {
 	return &AuthService{
 		users:     users,
 		jwtSecret: jwtSecret,
-		auth:      auth,
 	}
 }
 
@@ -54,7 +49,7 @@ func (s *AuthService) Signup(ctx context.Context, email, password string) (model
 		return models.User{}, "", fmt.Errorf("%w: %v", ErrCreateUser, err)
 	}
 
-	token, err := s.auth.GenerateToken(user.ID, s.jwtSecret)
+	token, err := auth.GenerateToken(user.ID, s.jwtSecret)
 	if err != nil {
 		return models.User{}, "", fmt.Errorf("%w: %v", ErrGenerateToken, err)
 	}
@@ -71,7 +66,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (models
 		return models.User{}, "", ErrInvalidCredentials
 	}
 
-	token, err := s.auth.GenerateToken(user.ID, s.jwtSecret)
+	token, err := auth.GenerateToken(user.ID, s.jwtSecret)
 	if err != nil {
 		return models.User{}, "", fmt.Errorf("%w: %v", ErrGenerateToken, err)
 	}
@@ -79,7 +74,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (models
 }
 
 func (s *AuthService) VerifyToken(_ context.Context, token string) (string, error) {
-	userID, err := s.auth.ParseToken(token, s.jwtSecret)
+	userID, err := auth.ParseToken(token, s.jwtSecret)
 	if err != nil {
 		return "", fmt.Errorf("%w: %v", ErrParseToken, err)
 	}
