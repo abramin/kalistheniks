@@ -30,3 +30,8 @@ func TestSessionRepository_GetLastSession(t *testing.T) {
 	t.Skip("TODO: implement session repository get last session test")
 	_ = require.New(t)
 }
+
+func TestSessionRepository_SessionBelongsToUser(t *testing.T) {
+	t.Skip("TODO: implement session repository session belongs to user test")
+	_ = require.New(t)
+}

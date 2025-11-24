@@ -1,19 +1,23 @@
-package services
+package plan
 
 import (
 	"context"
 	"database/sql"
 
 	"github.com/alexanderramin/kalistheniks/internal/models"
-	"github.com/alexanderramin/kalistheniks/internal/repositories"
 )
+
+type SessionRepository interface {
+	GetLastSet(ctx context.Context, userID string) (models.Set, error)
+	GetLastSession(ctx context.Context, userID string) (models.Session, error)
+}
 
 // PlanService holds simple V1 progression logic.
 type PlanService struct {
-	sessions repositories.SessionRepository
+	sessions SessionRepository
 }
 
-func NewPlanService(repo repositories.SessionRepository) *PlanService {
+func NewPlanService(repo SessionRepository) *PlanService {
 	return &PlanService{sessions: repo}
 }
 
@@ -54,9 +58,10 @@ func (p *PlanService) NextSuggestion(ctx context.Context, userID string) (models
 
 	if lastSession, err := p.sessions.GetLastSession(ctx, userID); err == nil {
 		if lastSession.SessionType != nil {
-			if *lastSession.SessionType == "upper" {
+			switch *lastSession.SessionType {
+			case "upper":
 				suggestion.Notes += " Next: switch to lower body."
-			} else if *lastSession.SessionType == "lower" {
+			case "lower":
 				suggestion.Notes += " Next: switch to upper body."
 			}
 		}
