@@ -45,7 +45,6 @@ func TestPlanService_NextSuggestion(t *testing.T) {
 
 		service := NewPlanService(mockSessionRepository)
 		mockSessionRepository.EXPECT().GetLastSet(ctx, userID).Return(models.Set{}, sql.ErrNoRows)
-
 		suggestion, err := service.NextSuggestion(ctx, userID)
 		require.NoError(t, err)
 		require.Equal(t, 20.0, suggestion.WeightKG)
@@ -63,7 +62,10 @@ func TestPlanService_NextSuggestion(t *testing.T) {
 			WeightKG:   40.0,
 			Reps:       13,
 		}, nil)
-
+		stype := "workout"
+		mockSessionRepository.EXPECT().GetLastSession(ctx, userID).Return(models.Session{
+			SessionType: &stype,
+		}, nil)
 		suggestion, err := service.NextSuggestion(ctx, userID)
 		require.NoError(t, err)
 		require.Equal(t, 42.5, suggestion.WeightKG)
@@ -82,12 +84,35 @@ func TestPlanService_NextSuggestion(t *testing.T) {
 			WeightKG:   60.0,
 			Reps:       5,
 		}, nil)
-
+		stype := "workout"
+		mockSessionRepository.EXPECT().GetLastSession(ctx, userID).Return(models.Session{
+			SessionType: &stype,
+		}, nil)
 		suggestion, err := service.NextSuggestion(ctx, userID)
 		require.NoError(t, err)
 		require.Equal(t, 60.0, suggestion.WeightKG)
 		require.Equal(t, 4, suggestion.Reps)
-		require.Contains(t, suggestion.Notes, "decrease reps")
+		require.Contains(t, suggestion.Notes, "reduce reps")
+	})
+
+	t.Run("switcches session type note", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockSessionRepository := mocks.NewMockSessionRepository(ctrl)
+
+		service := NewPlanService(mockSessionRepository)
+		mockSessionRepository.EXPECT().GetLastSet(ctx, userID).Return(models.Set{
+			ExerciseID: "pull-ups",
+			WeightKG:   0.0,
+			Reps:       8,
+		}, nil)
+		stype := "upper"
+		mockSessionRepository.EXPECT().GetLastSession(ctx, userID).Return(models.Session{
+			SessionType: &stype,
+		}, nil)
+		suggestion, err := service.NextSuggestion(ctx, userID)
+		require.NoError(t, err)
+		require.Contains(t, suggestion.Notes, "switch to lower body")
 	})
 
 	t.Run("handles repository error", func(t *testing.T) {

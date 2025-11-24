@@ -50,7 +50,7 @@ func (p *PlanService) NextSuggestion(ctx context.Context, userID string) (models
 		suggestion.WeightKG = lastSet.WeightKG + 2.5
 		suggestion.Notes = "Hit upper range; increase weight."
 	case lastSet.Reps <= lowerRepRange:
-		suggestion.Reps = lowerRepRange - 1
+		suggestion.Reps = lastSet.Reps - 1
 		suggestion.Notes = "Fell short; keep weight, reduce reps."
 	default:
 		suggestion.Notes = "Maintain weight and rep target."
