@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/alexanderramin/kalistheniks/internal/config"
-	"github.com/alexanderramin/kalistheniks/internal/db"
 	"github.com/alexanderramin/kalistheniks/internal/handlers"
 	"github.com/alexanderramin/kalistheniks/internal/repositories"
 	"github.com/alexanderramin/kalistheniks/internal/services"
 	"github.com/alexanderramin/kalistheniks/internal/services/plan"
+	"github.com/alexanderramin/kalistheniks/pkg/db"
 )
 
 func main() {

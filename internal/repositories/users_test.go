@@ -2,54 +2,10 @@ package repositories
 
 import (
 	"context"
-	"database/sql"
-	"os"
-	"path/filepath"
 	"testing"
-	"time"
 
-	"github.com/alexanderramin/kalistheniks/internal/db"
-	"github.com/alexanderramin/kalistheniks/pkg/test_helpers"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
-
-var testDB *sql.DB
-var migrationsDir = filepath.Join("..", "..", "migrations")
-
-func TestMain(m *testing.M) {
-	ctx := context.Background()
-
-	pg, err := postgres.Run(ctx, "postgres:16-alpine")
-	if err != nil {
-		panic(err)
-	}
-
-	dsn, err := pg.ConnectionString(ctx, "sslmode=disable")
-	if err != nil {
-		panic(err)
-	}
-
-	testDB, err = db.New(dsn)
-	if err != nil {
-		panic(err)
-	}
-
-	if err := test_helpers.WaitForDB(ctx, testDB, 10*time.Second); err != nil {
-		panic(err)
-	}
-
-	if err := test_helpers.RunMigrations(ctx, testDB, migrationsDir); err != nil {
-		panic(err)
-	}
-
-	code := m.Run()
-
-	_ = testDB.Close()
-	_ = pg.Terminate(ctx)
-
-	os.Exit(code)
-}
 
 func TestUserRepository_Create(t *testing.T) {
 	t.Run("creates user successfully", func(t *testing.T) {
