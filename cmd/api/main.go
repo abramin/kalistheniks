@@ -12,6 +12,7 @@ import (
 	"github.com/alexanderramin/kalistheniks/internal/handlers"
 	"github.com/alexanderramin/kalistheniks/internal/repositories"
 	"github.com/alexanderramin/kalistheniks/internal/services"
+	"github.com/alexanderramin/kalistheniks/internal/services/plan"
 )
 
 func main() {
@@ -34,7 +35,7 @@ func main() {
 	sessionRepo := repositories.NewSessionRepository(database)
 	authService := services.NewAuthService(userRepo, cfg.JWTSecret)
 	sessionService := services.NewSessionService(sessionRepo)
-	planService := services.NewPlanService(sessionRepo)
+	planService := plan.NewPlanService(sessionRepo)
 
 	app := &handlers.App{
 		AuthService:    authService,
