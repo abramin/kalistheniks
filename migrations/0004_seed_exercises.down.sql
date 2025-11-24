@@ -1,0 +1,1 @@
+-- No-op: reverse seed data if added in the corresponding up migration.
