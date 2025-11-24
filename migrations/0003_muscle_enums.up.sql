@@ -1,3 +1,13 @@
+CREATE TYPE body_part_enum AS ENUM (
+    'upper_leg',
+    'back',
+    'chest',
+    'shoulder',
+    'back',
+    'upper_arm',
+     'core'
+);
+
 CREATE TYPE muscle_enum AS ENUM (
     'pectoralis_major',
     'triceps_brachii',
