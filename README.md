@@ -16,6 +16,8 @@ The goal of this stage is to build a clean, minimal service that captures workou
 
 ## API Endpoints (Stage 1)
 
+[Open API Documentation](https://kalistheniksio.stoplight.io/docs/kalistheniks-app/branches/main/ad0e5537e85fc-create-a-training-session)
+
 * `POST /signup`
 * `POST /login`
 * `POST /sessions`
