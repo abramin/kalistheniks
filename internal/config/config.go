@@ -13,7 +13,7 @@ type Config struct {
 // Real validation and defaults will be added in a later stage.
 func Load() (Config, error) {
 	cfg := Config{
-		DBDSN:     getenvOrDefault("DB_DSN", "postgres://user:pass@localhost:5432/kalistheniks"),
+		DBDSN:     getenvOrDefault("DB_DSN", "postgres://kalistheniks:kalistheniks@localhost:5432/kalistheniks?sslmode=disable"),
 		JWTSecret: getenvOrDefault("JWT_SECRET", "replace-me"),
 		Addr:      getenvOrDefault("ADDR", ":8080"),
 	}

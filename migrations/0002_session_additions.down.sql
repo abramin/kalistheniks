@@ -1,0 +1,5 @@
+ALTER TABLE sets
+DROP COLUMN IF EXISTS created_at;
+
+ALTER TABLE sessions
+DROP COLUMN IF EXISTS session_type;

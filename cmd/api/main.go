@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -9,7 +10,8 @@ import (
 	"github.com/alexanderramin/kalistheniks/internal/config"
 	"github.com/alexanderramin/kalistheniks/internal/db"
 	"github.com/alexanderramin/kalistheniks/internal/handlers"
-	"github.com/alexanderramin/kalistheniks/internal/rules"
+	"github.com/alexanderramin/kalistheniks/internal/repositories"
+	"github.com/alexanderramin/kalistheniks/internal/services"
 )
 
 func main() {
@@ -20,11 +22,27 @@ func main() {
 
 	logger := log.New(os.Stdout, "api ", log.LstdFlags|log.Lshortfile)
 
+	database, err := db.New(cfg.DBDSN)
+	if err != nil {
+		logger.Fatalf("failed to connect to db: %v", err)
+	}
+	if err := db.Ping(context.Background(), database); err != nil {
+		logger.Fatalf("db ping failed: %v", err)
+	}
+
+	userRepo := repositories.NewUserRepository(database)
+	sessionRepo := repositories.NewSessionRepository(database)
+
+	authService := services.NewAuthService(userRepo, cfg.JWTSecret)
+	sessionService := services.NewSessionService(sessionRepo)
+	planService := services.NewPlanService(sessionRepo)
+
 	app := &handlers.App{
-		DB:     db.New(),
-		Logger: logger,
-		Config: cfg,
-		Rules:  rules.New(),
+		AuthService:    authService,
+		SessionService: sessionService,
+		PlanService:    planService,
+		Logger:         logger,
+		Config:         cfg,
 	}
 
 	router := handlers.Router(app)

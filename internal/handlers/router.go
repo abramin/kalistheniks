@@ -2,18 +2,29 @@ package handlers
 
 import (
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 // Router registers HTTP routes for the API.
 func Router(app *App) http.Handler {
-	mux := http.NewServeMux()
+	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
-	mux.HandleFunc("/health", app.health)
-	mux.HandleFunc("/signup", app.signup)
-	mux.HandleFunc("/login", app.login)
-	mux.HandleFunc("/sessions", app.sessions)
-	mux.HandleFunc("/sessions/", app.sessionSets) // expects /sessions/{id}/sets
-	mux.HandleFunc("/plan/next", app.nextPlan)
+	r.Get("/health", app.health)
+	r.Post("/signup", app.signup)
+	r.Post("/login", app.login)
 
-	return mux
+	r.Group(func(protected chi.Router) {
+		protected.Use(app.authMiddleware)
+		protected.Get("/sessions", app.listSessions)
+		protected.Post("/sessions", app.createSession)
+		protected.Post("/sessions/{id}/sets", app.createSet)
+		protected.Get("/plan/next", app.nextPlan)
+	})
+
+	return r
 }

@@ -4,14 +4,14 @@ import (
 	"log"
 
 	"github.com/alexanderramin/kalistheniks/internal/config"
-	"github.com/alexanderramin/kalistheniks/internal/db"
-	"github.com/alexanderramin/kalistheniks/internal/rules"
+	"github.com/alexanderramin/kalistheniks/internal/services"
 )
 
 // App wires shared dependencies for HTTP handlers.
 type App struct {
-	DB     *db.DB
-	Logger *log.Logger
-	Config config.Config
-	Rules  *rules.RuleEngine
+	AuthService    *services.AuthService
+	SessionService *services.SessionService
+	PlanService    *services.PlanService
+	Logger         *log.Logger
+	Config         config.Config
 }
