@@ -8,21 +8,15 @@ import (
 	"github.com/alexanderramin/kalistheniks/internal/models"
 )
 
-type UserRepository interface {
-	Create(ctx context.Context, email, passwordHash string) (models.User, error)
-	FindByEmail(ctx context.Context, email string) (models.User, error)
-	FindByID(ctx context.Context, id string) (models.User, error)
-}
-
-type userRepo struct {
+type UserRepository struct {
 	db *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) UserRepository {
-	return &userRepo{db: db}
+func NewUserRepository(db *sql.DB) *UserRepository {
+	return &UserRepository{db: db}
 }
 
-func (r *userRepo) Create(ctx context.Context, email, passwordHash string) (models.User, error) {
+func (r *UserRepository) Create(ctx context.Context, email, passwordHash string) (models.User, error) {
 	const q = `
 INSERT INTO users (email, password_hash)
 VALUES ($1, $2)
@@ -34,7 +28,7 @@ RETURNING id, email, password_hash, created_at, updated_at`
 	return u, err
 }
 
-func (r *userRepo) FindByEmail(ctx context.Context, email string) (models.User, error) {
+func (r *UserRepository) FindByEmail(ctx context.Context, email string) (models.User, error) {
 	const q = `
 SELECT id, email, password_hash, created_at, updated_at
 FROM users
@@ -48,7 +42,7 @@ WHERE email = $1`
 	return u, err
 }
 
-func (r *userRepo) FindByID(ctx context.Context, id string) (models.User, error) {
+func (r *UserRepository) FindByID(ctx context.Context, id string) (models.User, error) {
 	const q = `
 SELECT id, email, password_hash, created_at, updated_at
 FROM users
