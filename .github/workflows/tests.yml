@@ -1,0 +1,41 @@
+name: CI Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Run unit tests (exclude cucumber suite)
+        run: |
+          go test $(go list ./... | grep -v '/features$')
+
+  cucumber:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Install godog
+        run: |
+          go install github.com/cucumber/godog/cmd/godog@v0.15.1
+
+      - name: Run BDD features
+        run: |
+          godog run ./features
