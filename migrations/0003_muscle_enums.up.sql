@@ -3,7 +3,6 @@ CREATE TYPE body_part_enum AS ENUM (
     'back',
     'chest',
     'shoulder',
-    'back',
     'upper_arm',
      'core'
 );
