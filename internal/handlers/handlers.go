@@ -162,7 +162,7 @@ func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
 }
 
-func userResponse(u models.User) map[string]any {
+func userResponse(u *models.User) map[string]any {
 	return map[string]any{
 		"id":         u.ID,
 		"email":      u.Email,

@@ -13,9 +13,9 @@ type User struct {
 type Exercise struct {
 	ID              string
 	Name            string
-	BodyPart        *string
-	PrimaryMuscle   *string
-	SecondaryMuscle *string
+	BodyPart        *string // TODO: enum
+	PrimaryMuscle   *string // TODO: enum
+	SecondaryMuscle *string // TODO: enum
 	IsActive        bool
 }
 
@@ -24,7 +24,7 @@ type Session struct {
 	UserID      string
 	PerformedAt time.Time
 	Notes       *string
-	SessionType *string
+	SessionType *string // TODO: enum
 	Sets        []Set
 }
 

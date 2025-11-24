@@ -36,10 +36,10 @@ func (m *MockUserRepository) EXPECT() *MockUserRepositoryMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockUserRepository) Create(ctx context.Context, email, passwordHash string) (models.User, error) {
+func (m *MockUserRepository) Create(ctx context.Context, email, passwordHash string) (*models.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", ctx, email, passwordHash)
-	ret0, _ := ret[0].(models.User)
+	ret0, _ := ret[0].(*models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -51,10 +51,10 @@ func (mr *MockUserRepositoryMockRecorder) Create(ctx, email, passwordHash interf
 }
 
 // FindByEmail mocks base method.
-func (m *MockUserRepository) FindByEmail(ctx context.Context, email string) (models.User, error) {
+func (m *MockUserRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindByEmail", ctx, email)
-	ret0, _ := ret[0].(models.User)
+	ret0, _ := ret[0].(*models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

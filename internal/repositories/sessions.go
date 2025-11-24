@@ -8,24 +8,15 @@ import (
 	"github.com/alexanderramin/kalistheniks/internal/models"
 )
 
-type SessionRepository interface {
-	Create(ctx context.Context, s models.Session) (models.Session, error)
-	AddSet(ctx context.Context, set models.Set) (models.Set, error)
-	ListWithSets(ctx context.Context, userID string) ([]models.Session, error)
-	GetLastSet(ctx context.Context, userID string) (models.Set, error)
-	GetLastSession(ctx context.Context, userID string) (models.Session, error)
-	SessionBelongsToUser(ctx context.Context, sessionID, userID string) (bool, error)
-}
-
-type sessionRepo struct {
+type SessionRepository struct {
 	db *sql.DB
 }
 
-func NewSessionRepository(db *sql.DB) SessionRepository {
-	return &sessionRepo{db: db}
+func NewSessionRepository(db *sql.DB) *SessionRepository {
+	return &SessionRepository{db: db}
 }
 
-func (r *sessionRepo) Create(ctx context.Context, s models.Session) (models.Session, error) {
+func (r *SessionRepository) Create(ctx context.Context, s models.Session) (models.Session, error) {
 	const q = `
 INSERT INTO sessions (user_id, performed_at, notes, session_type)
 VALUES ($1, $2, $3, $4)
@@ -37,7 +28,7 @@ RETURNING id, user_id, performed_at, notes, session_type`
 	return created, err
 }
 
-func (r *sessionRepo) AddSet(ctx context.Context, set models.Set) (models.Set, error) {
+func (r *SessionRepository) AddSet(ctx context.Context, set models.Set) (models.Set, error) {
 	const q = `
 INSERT INTO sets (session_id, exercise_id, set_index, reps, weight_kg, rpe)
 VALUES ($1, $2, $3, $4, $5, $6)
@@ -49,7 +40,7 @@ RETURNING id, session_id, exercise_id, set_index, reps, weight_kg, rpe`
 	return out, err
 }
 
-func (r *sessionRepo) ListWithSets(ctx context.Context, userID string) ([]models.Session, error) {
+func (r *SessionRepository) ListWithSets(ctx context.Context, userID string) ([]models.Session, error) {
 	const q = `
 SELECT s.id, s.user_id, s.performed_at, s.notes, s.session_type,
        st.id, st.session_id, st.exercise_id, st.set_index, st.reps, st.weight_kg, st.rpe
@@ -129,7 +120,7 @@ ORDER BY s.performed_at DESC, st.set_index ASC`
 	return result, rows.Err()
 }
 
-func (r *sessionRepo) GetLastSet(ctx context.Context, userID string) (models.Set, error) {
+func (r *SessionRepository) GetLastSet(ctx context.Context, userID string) (models.Set, error) {
 	const q = `
 SELECT st.id, st.session_id, st.exercise_id, st.set_index, st.reps, st.weight_kg, st.rpe
 FROM sets st
@@ -147,7 +138,7 @@ LIMIT 1`
 	return set, err
 }
 
-func (r *sessionRepo) GetLastSession(ctx context.Context, userID string) (models.Session, error) {
+func (r *SessionRepository) GetLastSession(ctx context.Context, userID string) (models.Session, error) {
 	const q = `
 SELECT id, user_id, performed_at, notes, session_type
 FROM sessions
@@ -171,7 +162,7 @@ LIMIT 1`
 	return s, err
 }
 
-func (r *sessionRepo) SessionBelongsToUser(ctx context.Context, sessionID, userID string) (bool, error) {
+func (r *SessionRepository) SessionBelongsToUser(ctx context.Context, sessionID, userID string) (bool, error) {
 	const q = `
 SELECT 1
 FROM sessions

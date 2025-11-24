@@ -11,8 +11,8 @@ import (
 )
 
 type UserRepository interface {
-	Create(ctx context.Context, email, passwordHash string) (models.User, error)
-	FindByEmail(ctx context.Context, email string) (models.User, error)
+	Create(ctx context.Context, email, passwordHash string) (*models.User, error)
+	FindByEmail(ctx context.Context, email string) (*models.User, error)
 }
 
 type AuthService struct {
@@ -37,37 +37,37 @@ func NewAuthService(users UserRepository, jwtSecret string) *AuthService {
 	}
 }
 
-func (s *AuthService) Signup(ctx context.Context, email, password string) (models.User, string, error) {
+func (s *AuthService) Signup(ctx context.Context, email, password string) (*models.User, string, error) {
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return models.User{}, "", fmt.Errorf("%w: %v", ErrHashPassword, err)
+		return nil, "", fmt.Errorf("%w: %v", ErrHashPassword, err)
 	}
 
 	user, err := s.users.Create(ctx, email, string(hashed))
 	if err != nil {
-		return models.User{}, "", fmt.Errorf("%w: %v", ErrCreateUser, err)
+		return nil, "", fmt.Errorf("%w: %v", ErrCreateUser, err)
 	}
 
 	token, err := auth.GenerateToken(user.ID, s.jwtSecret)
 	if err != nil {
-		return models.User{}, "", fmt.Errorf("%w: %v", ErrGenerateToken, err)
+		return nil, "", fmt.Errorf("%w: %v", ErrGenerateToken, err)
 	}
 	return user, token, nil
 }
 
-func (s *AuthService) Login(ctx context.Context, email, password string) (models.User, string, error) {
+func (s *AuthService) Login(ctx context.Context, email, password string) (*models.User, string, error) {
 	user, err := s.users.FindByEmail(ctx, email)
 	if err != nil {
-		return models.User{}, "", fmt.Errorf("%w: %v", ErrFindUser, err)
+		return nil, "", fmt.Errorf("%w: %v", ErrFindUser, err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-		return models.User{}, "", ErrInvalidCredentials
+		return nil, "", ErrInvalidCredentials
 	}
 
 	token, err := auth.GenerateToken(user.ID, s.jwtSecret)
 	if err != nil {
-		return models.User{}, "", fmt.Errorf("%w: %v", ErrGenerateToken, err)
+		return nil, "", fmt.Errorf("%w: %v", ErrGenerateToken, err)
 	}
 	return user, token, nil
 }
