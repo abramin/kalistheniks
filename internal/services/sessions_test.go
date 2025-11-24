@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// go:generate mockgen -source=sessions.go -destination=../services/mocks/sessions_mock.go -package=mocks SessionService
+//go:generate mockgen -source=sessions.go -destination=../services/mocks/sessions_mock.go -package=mocks SessionService
 
 func TestSessionService_CreateSession(t *testing.T) {
 	ctrl := gomock.NewController(t)

@@ -7,7 +7,6 @@ import (
 
 	"github.com/alexanderramin/kalistheniks/internal/auth"
 	"github.com/alexanderramin/kalistheniks/internal/models"
-	"github.com/alexanderramin/kalistheniks/internal/repositories"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -31,7 +30,7 @@ var (
 	ErrParseToken         = errors.New("failed to parse token")
 )
 
-func NewAuthService(users repositories.UserRepository, jwtSecret string) *AuthService {
+func NewAuthService(users UserRepository, jwtSecret string) *AuthService {
 	return &AuthService{
 		users:     users,
 		jwtSecret: jwtSecret,

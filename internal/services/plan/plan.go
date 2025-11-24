@@ -21,6 +21,7 @@ func NewPlanService(repo SessionRepository) *PlanService {
 	return &PlanService{sessions: repo}
 }
 
+// TODO: replace with a proper rule engine integration.
 // NextSuggestion returns a naive progression recommendation based on the last recorded set.
 func (p *PlanService) NextSuggestion(ctx context.Context, userID string) (models.PlanSuggestion, error) {
 	lastSet, err := p.sessions.GetLastSet(ctx, userID)

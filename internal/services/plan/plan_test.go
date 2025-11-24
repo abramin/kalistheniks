@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// go:generate mockgen -source=plan.go -destination=../services/plan/mocks/plan_mock.go -package=mocks SessionRepository
+//go:generate mockgen -source=plan.go -destination=../services/plan/mocks/plan_mock.go -package=mocks SessionRepository
 func TestPlanService_NextSuggestion(t *testing.T) {
 	ctx := context.Background()
 	userID := "user-123"
