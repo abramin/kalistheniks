@@ -55,4 +55,29 @@ func TestGenerateAndParseToken(t *testing.T) {
 		require.Error(t, err)
 		require.Empty(t, parsedUser)
 	})
+
+	t.Run("malformed token", func(t *testing.T) {
+		parsedUser, err := ParseToken("this.is.not.a.valid.token", "secret")
+		require.Error(t, err)
+		require.Empty(t, parsedUser)
+	})
+
+	t.Run("token contains correct claims", func(t *testing.T) {
+		secret := "anothersecret"
+		userID := "user-claims"
+
+		tokenString, err := GenerateToken(userID, secret)
+		require.NoError(t, err)
+		token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return []byte(secret), nil
+		})
+		require.NoError(t, err)
+
+		claims, ok := token.Claims.(*jwt.RegisteredClaims)
+		require.True(t, ok)
+		require.Equal(t, userID, claims.Subject)
+		require.Equal(t, "kalistheniks-api", claims.Issuer)
+		require.Contains(t, claims.Audience, "kalistheniks-users")
+		require.NotEmpty(t, claims.ID)
+	})
 }
