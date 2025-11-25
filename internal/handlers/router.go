@@ -18,18 +18,8 @@ import (
 func Router(app *App) http.Handler {
 	r := chi.NewRouter()
 
-<<<<<<< HEAD
-	// Security middleware
-	r.Use(handlerMiddleware.SecurityHeaders)
-	r.Use(handlerMiddleware.CORS)
-
 	// Chi built-in middleware
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-=======
-	// Chi built-in middleware
-	r.Use(middleware.RealIP)                   // Extract real IP from proxies
+	r.Use(middleware.RealIP)                    // Extract real IP from proxies
 	r.Use(middleware.RequestID)                 // Generate unique request IDs
 	r.Use(middleware.Logger)                    // Log HTTP requests
 	r.Use(middleware.Recoverer)                 // Recover from panics
@@ -38,12 +28,12 @@ func Router(app *App) http.Handler {
 
 	// Security headers middleware
 	secureMiddleware := secure.New(secure.Options{
-		FrameDeny:             true,                          // Prevent clickjacking (X-Frame-Options: DENY)
-		ContentTypeNosniff:    true,                          // Prevent MIME type sniffing
-		BrowserXssFilter:      true,                          // Enable XSS filter
-		ContentSecurityPolicy: "default-src 'self'",          // CSP policy
+		FrameDeny:             true,                              // Prevent clickjacking (X-Frame-Options: DENY)
+		ContentTypeNosniff:    true,                              // Prevent MIME type sniffing
+		BrowserXssFilter:      true,                              // Enable XSS filter
+		ContentSecurityPolicy: "default-src 'self'",              // CSP policy
 		ReferrerPolicy:        "strict-origin-when-cross-origin", // Referrer policy
-		IsDevelopment:         app.Config.Env == "development", // Disable in dev for easier debugging
+		IsDevelopment:         app.Config.Env == "development",   // Disable in dev for easier debugging
 	})
 	r.Use(secureMiddleware.Handler)
 
@@ -59,7 +49,6 @@ func Router(app *App) http.Handler {
 
 	// Global rate limiting: 100 requests per minute per IP
 	r.Use(httprate.LimitByIP(100, 1*time.Minute))
->>>>>>> 7948578 (Add production-ready middleware using ecosystem packages)
 
 	auth := authHandlers.New(app.AuthService)
 	api := apiHandlers.New(app.SessionService, app.PlanService)

@@ -1,6 +1,7 @@
 package features
 
 import (
+	"context"
 	"os"
 	"testing"
 
