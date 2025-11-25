@@ -16,7 +16,7 @@ type scenarioState struct {
 func TestFeatures(t *testing.T) {
 	opts := godog.Options{
 		Output: colors.Colored(os.Stdout),
-		Paths:  []string{"features"},
+		Paths:  []string{"."},
 		Strict: true,
 	}
 
