@@ -35,7 +35,6 @@ func (s *SessionRepositorySuite) SetupSuite() {
 }
 
 func (s *SessionRepositorySuite) SetupTest() {
-	s.truncateSessions()
 	s.sessionRepo = NewSessionRepository(testDB)
 }
 
@@ -112,24 +111,184 @@ func (s *SessionRepositorySuite) TestSessionRepository_AddSet() {
 	})
 }
 
-func TestSessionRepository_ListWithSets(t *testing.T) {
-	t.Skip("TODO: implement session repository list with sets test")
-	_ = require.New(t)
+func (s *SessionRepositorySuite) TestSessionRepository_ListWithSets() {
+	s.T().Run("lists sessions with sets successfully", func(t *testing.T) {
+		s.truncateSessions()
+		// Create a session
+		session := &models.Session{
+			PerformedAt: time.Now().UTC(),
+			Notes:       ptrToString("Test notes"),
+			UserID:      s.user.ID,
+			SessionType: ptrToString("workout"),
+		}
+		createdSession, err := s.sessionRepo.Create(context.Background(), session)
+		require.NoError(t, err)
+
+		// Add a set to the session
+		set := &models.Set{
+			SessionID:  createdSession.ID,
+			ExerciseID: s.exerciseID,
+			SetIndex:   0,
+			Reps:       10,
+			WeightKG:   0.0,
+		}
+		_, err = s.sessionRepo.AddSet(context.Background(), set)
+		require.NoError(t, err)
+
+		// List sessions with sets
+		sessions, err := s.sessionRepo.ListWithSets(context.Background(), s.user.ID)
+		require.NoError(t, err)
+		require.Len(t, sessions, 1)
+		require.Equal(t, createdSession.ID, sessions[0].ID)
+		require.Len(t, sessions[0].Sets, 1)
+		require.Equal(t, 10, sessions[0].Sets[0].Reps)
+	})
+
+	s.T().Run("no sessions returns empty list", func(t *testing.T) {
+		s.truncateSessions()
+		sessions, err := s.sessionRepo.ListWithSets(context.Background(), s.user.ID)
+		require.NoError(t, err)
+		require.Len(t, sessions, 0)
+	})
+
+	s.T().Run("invalid user ID returns empty list", func(t *testing.T) {
+		s.truncateSessions()
+		otherID := uuid.New()
+		sessions, err := s.sessionRepo.ListWithSets(context.Background(), &otherID)
+		require.NoError(t, err)
+		require.Len(t, sessions, 0)
+	})
+
+	s.T().Run("nil user ID returns error", func(t *testing.T) {
+		s.truncateSessions()
+		_, err := s.sessionRepo.ListWithSets(context.Background(), nil)
+		require.Error(t, err)
+	})
 }
 
-func TestSessionRepository_GetLastSet(t *testing.T) {
-	t.Skip("TODO: implement session repository get last set test")
-	_ = require.New(t)
+func (s *SessionRepositorySuite) TestSessionRepository_GetLastSet() {
+	s.T().Run("gets last set successfully", func(t *testing.T) {
+		s.truncateSessions()
+		session := &models.Session{
+			PerformedAt: time.Now().UTC(),
+			Notes:       ptrToString("Test notes"),
+			UserID:      s.user.ID,
+			SessionType: ptrToString("workout"),
+		}
+		createdSession, err := s.sessionRepo.Create(context.Background(), session)
+		require.NoError(t, err)
+
+		// Add two sets to the session
+		set1 := &models.Set{
+			SessionID:  createdSession.ID,
+			ExerciseID: s.exerciseID,
+			SetIndex:   0,
+			Reps:       10,
+			WeightKG:   0.0,
+		}
+		_, err = s.sessionRepo.AddSet(context.Background(), set1)
+		require.NoError(t, err)
+
+		set2 := &models.Set{
+			SessionID:  createdSession.ID,
+			ExerciseID: s.exerciseID,
+			SetIndex:   1,
+			Reps:       8,
+			WeightKG:   0.0,
+		}
+		_, err = s.sessionRepo.AddSet(context.Background(), set2)
+		require.NoError(t, err)
+
+		// Get last set
+		lastSet, err := s.sessionRepo.GetLastSet(context.Background(), s.user.ID)
+		require.NoError(t, err)
+		require.Equal(t, 8, lastSet.Reps)
+		require.Equal(t, 1, lastSet.SetIndex)
+	})
+
+	s.T().Run("no sets returns nil", func(t *testing.T) {
+		s.truncateSessions()
+		_, err := s.sessionRepo.GetLastSet(context.Background(), s.user.ID)
+		require.Error(t, err)
+	})
+
+	s.T().Run("nil user ID returns error", func(t *testing.T) {
+		s.truncateSessions()
+		_, err := s.sessionRepo.GetLastSet(context.Background(), nil)
+		require.Error(t, err)
+	})
 }
 
-func TestSessionRepository_GetLastSession(t *testing.T) {
-	t.Skip("TODO: implement session repository get last session test")
-	_ = require.New(t)
+func (s *SessionRepositorySuite) TestSessionRepository_GetLastSession() {
+	s.T().Run("gets last session successfully", func(t *testing.T) {
+		s.truncateSessions()
+		// Create two sessions
+		session1 := &models.Session{
+			PerformedAt: time.Now().Add(-2 * time.Hour).UTC(),
+			Notes:       ptrToString("First session"),
+			UserID:      s.user.ID,
+			SessionType: ptrToString("workout"),
+		}
+		_, err := s.sessionRepo.Create(context.Background(), session1)
+		require.NoError(t, err)
+
+		session2 := &models.Session{
+			PerformedAt: time.Now().Add(-1 * time.Hour).UTC(),
+			Notes:       ptrToString("Second session"),
+			UserID:      s.user.ID,
+			SessionType: ptrToString("workout"),
+		}
+		createdSession2, err := s.sessionRepo.Create(context.Background(), session2)
+		require.NoError(t, err)
+
+		// Get last session
+		lastSession, err := s.sessionRepo.GetLastSession(context.Background(), s.user.ID)
+		require.NoError(t, err)
+		require.Equal(t, createdSession2.ID, lastSession.ID)
+	})
+
+	s.T().Run("no sessions returns nil", func(t *testing.T) {
+		s.truncateSessions()
+		_, err := s.sessionRepo.GetLastSession(context.Background(), s.user.ID)
+		require.Error(t, err)
+	})
+
+	s.T().Run("nil user ID returns error", func(t *testing.T) {
+		s.truncateSessions()
+		_, err := s.sessionRepo.GetLastSession(context.Background(), nil)
+		require.Error(t, err)
+	})
 }
 
-func TestSessionRepository_SessionBelongsToUser(t *testing.T) {
-	t.Skip("TODO: implement session repository session belongs to user test")
-	_ = require.New(t)
+func (s *SessionRepositorySuite) TestSessionRepository_SessionBelongsToUser() {
+	s.T().Run("session belongs to user", func(t *testing.T) {
+		session := &models.Session{
+			PerformedAt: time.Now().UTC(),
+			Notes:       ptrToString("Test notes"),
+			UserID:      s.user.ID,
+			SessionType: ptrToString("workout"),
+		}
+		createdSession, err := s.sessionRepo.Create(context.Background(), session)
+		require.NoError(t, err)
+
+		belongs, err := s.sessionRepo.SessionBelongsToUser(context.Background(), createdSession.ID, s.user.ID)
+		require.NoError(t, err)
+		require.True(t, belongs)
+	})
+
+	s.T().Run("session does not belong to user", func(t *testing.T) {
+		otherID := uuid.New()
+		belongs, err := s.sessionRepo.SessionBelongsToUser(context.Background(), &otherID, s.user.ID)
+		require.NoError(t, err)
+		require.False(t, belongs)
+	})
+
+	s.T().Run("	invalid session ID returns false", func(t *testing.T) {
+		otherID := uuid.New()
+		belongs, err := s.sessionRepo.SessionBelongsToUser(context.Background(), &otherID, s.user.ID)
+		require.NoError(t, err)
+		require.False(t, belongs)
+	})
 }
 
 func ptrToString(s string) *string {

@@ -42,6 +42,10 @@ RETURNING id, session_id, exercise_id, set_index, reps, weight_kg, rpe`
 }
 
 func (r *SessionRepository) ListWithSets(ctx context.Context, userID *uuid.UUID) ([]*models.Session, error) {
+	if userID == nil {
+		return nil, errors.New("userID cannot be nil")
+	}
+
 	const q = `
 SELECT s.id, s.user_id, s.performed_at, s.notes, s.session_type,
        st.id, st.session_id, st.exercise_id, st.set_index, st.reps, st.weight_kg, st.rpe
