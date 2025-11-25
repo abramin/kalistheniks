@@ -64,9 +64,9 @@ SIGNUP_RESPONSE=$(curl -s -X POST "$BASE_URL/signup" \
 
 echo "Response: $SIGNUP_RESPONSE"
 
-# Extract token from signup response
+# Extract token from signup response (handle both "id" and "ID")
 TOKEN=$(echo $SIGNUP_RESPONSE | grep -o '"token":"[^"]*' | cut -d'"' -f4)
-USER_ID=$(echo $SIGNUP_RESPONSE | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+USER_ID=$(echo $SIGNUP_RESPONSE | grep -oE '"[Ii][Dd]":"[^"]*' | head -1 | cut -d'"' -f4)
 
 if [ -z "$TOKEN" ]; then
     print_error "Failed to extract token from signup response"
@@ -120,8 +120,8 @@ SESSION_RESPONSE=$(curl -s -X POST "$BASE_URL/sessions" \
 
 echo "Response: $SESSION_RESPONSE"
 
-# Extract session ID
-SESSION_ID=$(echo $SESSION_RESPONSE | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+# Extract session ID (handle both "id" and "ID")
+SESSION_ID=$(echo $SESSION_RESPONSE | grep -oE '"[Ii][Dd]":"[^"]*' | head -1 | cut -d'"' -f4)
 
 if [ -z "$SESSION_ID" ]; then
     print_error "Failed to create session"
@@ -152,7 +152,7 @@ SET1_RESPONSE=$(curl -s -X POST "$BASE_URL/sessions/$SESSION_ID/sets" \
     }")
 
 echo "Response: $SET1_RESPONSE"
-SET1_ID=$(echo $SET1_RESPONSE | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+SET1_ID=$(echo $SET1_RESPONSE | grep -oE '"[Ii][Dd]":"[^"]*' | head -1 | cut -d'"' -f4)
 
 if [ -n "$SET1_ID" ]; then
     print_success "Set 1 added successfully! (ID: $SET1_ID)"
@@ -174,7 +174,7 @@ SET2_RESPONSE=$(curl -s -X POST "$BASE_URL/sessions/$SESSION_ID/sets" \
     }")
 
 echo "Response: $SET2_RESPONSE"
-SET2_ID=$(echo $SET2_RESPONSE | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+SET2_ID=$(echo $SET2_RESPONSE | grep -oE '"[Ii][Dd]":"[^"]*' | head -1 | cut -d'"' -f4)
 
 if [ -n "$SET2_ID" ]; then
     print_success "Set 2 added successfully! (ID: $SET2_ID)"
@@ -196,7 +196,7 @@ SET3_RESPONSE=$(curl -s -X POST "$BASE_URL/sessions/$SESSION_ID/sets" \
     }")
 
 echo "Response: $SET3_RESPONSE"
-SET3_ID=$(echo $SET3_RESPONSE | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+SET3_ID=$(echo $SET3_RESPONSE | grep -oE '"[Ii][Dd]":"[^"]*' | head -1 | cut -d'"' -f4)
 
 if [ -n "$SET3_ID" ]; then
     print_success "Set 3 added successfully! (ID: $SET3_ID)"
@@ -218,7 +218,7 @@ SET4_RESPONSE=$(curl -s -X POST "$BASE_URL/sessions/$SESSION_ID/sets" \
     }")
 
 echo "Response: $SET4_RESPONSE"
-SET4_ID=$(echo $SET4_RESPONSE | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+SET4_ID=$(echo $SET4_RESPONSE | grep -oE '"[Ii][Dd]":"[^"]*' | head -1 | cut -d'"' -f4)
 
 if [ -n "$SET4_ID" ]; then
     print_success "Set 4 added successfully! (ID: $SET4_ID)"
@@ -240,7 +240,7 @@ SET5_RESPONSE=$(curl -s -X POST "$BASE_URL/sessions/$SESSION_ID/sets" \
     }")
 
 echo "Response: $SET5_RESPONSE"
-SET5_ID=$(echo $SET5_RESPONSE | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+SET5_ID=$(echo $SET5_RESPONSE | grep -oE '"[Ii][Dd]":"[^"]*' | head -1 | cut -d'"' -f4)
 
 if [ -n "$SET5_ID" ]; then
     print_success "Set 5 added successfully! (ID: $SET5_ID)"
@@ -258,7 +258,7 @@ SESSIONS_RESPONSE=$(curl -s -X GET "$BASE_URL/sessions" \
 echo "Response:"
 echo "$SESSIONS_RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$SESSIONS_RESPONSE"
 
-SESSION_COUNT=$(echo "$SESSIONS_RESPONSE" | grep -o '"id":"' | wc -l)
+SESSION_COUNT=$(echo "$SESSIONS_RESPONSE" | grep -oE '"[Ii][Dd]":' | wc -l)
 print_success "Found $SESSION_COUNT session(s)"
 
 # 6. Get Next Plan Suggestion
@@ -293,7 +293,7 @@ SESSION_RESPONSE_2=$(curl -s -X POST "$BASE_URL/sessions" \
 
 echo "Response: $SESSION_RESPONSE_2"
 
-SESSION_ID_2=$(echo $SESSION_RESPONSE_2 | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+SESSION_ID_2=$(echo $SESSION_RESPONSE_2 | grep -oE '"[Ii][Dd]":"[^"]*' | head -1 | cut -d'"' -f4)
 
 if [ -z "$SESSION_ID_2" ]; then
     print_error "Failed to create second session"
@@ -317,7 +317,7 @@ else
         }")
 
     echo "Response: $SET6_RESPONSE"
-    SET6_ID=$(echo $SET6_RESPONSE | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+    SET6_ID=$(echo $SET6_RESPONSE | grep -oE '"[Ii][Dd]":"[^"]*' | head -1 | cut -d'"' -f4)
 
     if [ -n "$SET6_ID" ]; then
         print_success "Set added to lower body session! (ID: $SET6_ID)"
