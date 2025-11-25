@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/alexanderramin/kalistheniks/internal/handlers/response"
 	"github.com/alexanderramin/kalistheniks/internal/services"
 	"github.com/google/uuid"
 )
@@ -25,12 +26,12 @@ func (m *Auth) RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := ExtractBearerToken(r)
 		if token == "" {
-			http.Error(w, `{"error":"missing token"}`, http.StatusUnauthorized)
+			response.Error(w, http.StatusUnauthorized, "missing token")
 			return
 		}
 		userID, err := m.auth.VerifyToken(r.Context(), token)
 		if err != nil {
-			http.Error(w, `{"error":"invalid token"}`, http.StatusUnauthorized)
+			response.Error(w, http.StatusUnauthorized, "invalid token")
 			return
 		}
 		ctx := context.WithValue(r.Context(), userIDContextKey, userID)
