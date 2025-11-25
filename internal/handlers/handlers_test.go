@@ -58,14 +58,49 @@ func (s *HandlerSuite) TestHealth() {
 func (s *HandlerSuite) TestSignup() {
 	s.Run("success", func() {
 		user := &models.User{ID: uuid.New()}
-		s.authMock.EXPECT().Signup(gomock.Any(), "user@example.com", "password").Return(user, "token", nil)
+		s.authMock.EXPECT().Signup(gomock.Any(), "user@example.com", "Password123").Return(user, "token", nil)
 
-		resp := s.doRequest(http.MethodPost, "/signup", bytes.NewBufferString(`{"email":"user@example.com","password":"password"}`), "")
+		resp := s.doRequest(http.MethodPost, "/signup", bytes.NewBufferString(`{"email":"user@example.com","password":"Password123"}`), "")
 		s.Equal(http.StatusCreated, resp.StatusCode)
 	})
 
 	s.Run("bad input", func() {
 		resp := s.doRequest(http.MethodPost, "/signup", bytes.NewBufferString("not-json"), "")
+		s.Equal(http.StatusBadRequest, resp.StatusCode)
+	})
+
+	s.Run("invalid email format", func() {
+		resp := s.doRequest(http.MethodPost, "/signup", bytes.NewBufferString(`{"email":"notanemail","password":"Password123"}`), "")
+		s.Equal(http.StatusBadRequest, resp.StatusCode)
+	})
+
+	s.Run("weak password", func() {
+		resp := s.doRequest(http.MethodPost, "/signup", bytes.NewBufferString(`{"email":"user@example.com","password":"weak"}`), "")
+		s.Equal(http.StatusBadRequest, resp.StatusCode)
+	})
+
+	s.Run("password too short", func() {
+		resp := s.doRequest(http.MethodPost, "/signup", bytes.NewBufferString(`{"email":"user@example.com","password":"Pass1"}`), "")
+		s.Equal(http.StatusBadRequest, resp.StatusCode)
+	})
+
+	s.Run("malformed JSON", func() {
+		resp := s.doRequest(http.MethodPost, "/signup", bytes.NewBufferString(`{"email":"user@example.com","password":`), "")
+		s.Equal(http.StatusBadRequest, resp.StatusCode)
+	})
+
+	s.Run("empty email", func() {
+		resp := s.doRequest(http.MethodPost, "/signup", bytes.NewBufferString(`{"email":"","password":"Password123"}`), "")
+		s.Equal(http.StatusBadRequest, resp.StatusCode)
+	})
+
+	s.Run("empty body", func() {
+		resp := s.doRequest(http.MethodPost, "/signup", bytes.NewBufferString(`{}`), "")
+		s.Equal(http.StatusBadRequest, resp.StatusCode)
+	})
+
+	s.Run("unknown fields", func() {
+		resp := s.doRequest(http.MethodPost, "/signup", bytes.NewBufferString(`{"email":"user@example.com","password":"Password123","extra":"field"}`), "")
 		s.Equal(http.StatusBadRequest, resp.StatusCode)
 	})
 }
@@ -84,6 +119,26 @@ func (s *HandlerSuite) TestLogin() {
 
 		resp := s.doRequest(http.MethodPost, "/login", bytes.NewBufferString(`{"email":"login@example.com","password":"wrong"}`), "")
 		s.Equal(http.StatusUnauthorized, resp.StatusCode)
+	})
+
+	s.Run("empty email", func() {
+		resp := s.doRequest(http.MethodPost, "/login", bytes.NewBufferString(`{"email":"","password":"password"}`), "")
+		s.Equal(http.StatusUnauthorized, resp.StatusCode)
+	})
+
+	s.Run("empty password", func() {
+		resp := s.doRequest(http.MethodPost, "/login", bytes.NewBufferString(`{"email":"login@example.com","password":""}`), "")
+		s.Equal(http.StatusUnauthorized, resp.StatusCode)
+	})
+
+	s.Run("malformed JSON", func() {
+		resp := s.doRequest(http.MethodPost, "/login", bytes.NewBufferString(`{"email":"login@example.com"`), "")
+		s.Equal(http.StatusBadRequest, resp.StatusCode)
+	})
+
+	s.Run("unknown fields", func() {
+		resp := s.doRequest(http.MethodPost, "/login", bytes.NewBufferString(`{"email":"login@example.com","password":"password","extra":"field"}`), "")
+		s.Equal(http.StatusBadRequest, resp.StatusCode)
 	})
 }
 
@@ -121,6 +176,50 @@ func (s *HandlerSuite) TestSessionEndpoints() {
 		payload, _ := json.Marshal(body)
 		resp := s.doRequest(http.MethodPost, "/sessions/"+sessionID.String()+"/sets", bytes.NewBuffer(payload), "goodtoken")
 		s.Equal(http.StatusCreated, resp.StatusCode)
+	})
+
+	s.Run("create set with negative reps", func() {
+		sessionID := uuid.New()
+		exerciseID := uuid.New()
+		s.authMock.EXPECT().VerifyToken(gomock.Any(), "goodtoken").Return(userID.String(), nil)
+
+		body := map[string]any{"exercise_id": exerciseID.String(), "set_index": 0, "reps": -5, "weight_kg": 20.0}
+		payload, _ := json.Marshal(body)
+		resp := s.doRequest(http.MethodPost, "/sessions/"+sessionID.String()+"/sets", bytes.NewBuffer(payload), "goodtoken")
+		s.Equal(http.StatusBadRequest, resp.StatusCode)
+	})
+
+	s.Run("create set with negative weight", func() {
+		sessionID := uuid.New()
+		exerciseID := uuid.New()
+		s.authMock.EXPECT().VerifyToken(gomock.Any(), "goodtoken").Return(userID.String(), nil)
+
+		body := map[string]any{"exercise_id": exerciseID.String(), "set_index": 0, "reps": 8, "weight_kg": -10.0}
+		payload, _ := json.Marshal(body)
+		resp := s.doRequest(http.MethodPost, "/sessions/"+sessionID.String()+"/sets", bytes.NewBuffer(payload), "goodtoken")
+		s.Equal(http.StatusBadRequest, resp.StatusCode)
+	})
+
+	s.Run("create set with invalid RPE", func() {
+		sessionID := uuid.New()
+		exerciseID := uuid.New()
+		s.authMock.EXPECT().VerifyToken(gomock.Any(), "goodtoken").Return(userID.String(), nil)
+
+		rpe := 15 // RPE should be 1-10
+		body := map[string]any{"exercise_id": exerciseID.String(), "set_index": 0, "reps": 8, "weight_kg": 20.0, "rpe": rpe}
+		payload, _ := json.Marshal(body)
+		resp := s.doRequest(http.MethodPost, "/sessions/"+sessionID.String()+"/sets", bytes.NewBuffer(payload), "goodtoken")
+		s.Equal(http.StatusBadRequest, resp.StatusCode)
+	})
+
+	s.Run("create set with invalid exercise ID format", func() {
+		sessionID := uuid.New()
+		s.authMock.EXPECT().VerifyToken(gomock.Any(), "goodtoken").Return(userID.String(), nil)
+
+		body := map[string]any{"exercise_id": "not-a-uuid", "set_index": 0, "reps": 8, "weight_kg": 20.0}
+		payload, _ := json.Marshal(body)
+		resp := s.doRequest(http.MethodPost, "/sessions/"+sessionID.String()+"/sets", bytes.NewBuffer(payload), "goodtoken")
+		s.Equal(http.StatusBadRequest, resp.StatusCode)
 	})
 
 	s.Run("list sessions unauthorized", func() {
