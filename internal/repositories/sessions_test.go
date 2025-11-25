@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/alexanderramin/kalistheniks/internal/models"
 	"github.com/google/uuid"
@@ -33,12 +34,13 @@ func (s *SessionRepositorySuite) SetupSuite() {
 func (s *SessionRepositorySuite) SetupTest() {
 	truncateSessions(s.T())
 	s.sessionRepo = NewSessionRepository(testDB)
-
 }
 
 func (s *SessionRepositorySuite) TestCreateSessionSuccess() {
-
 	session := models.Session{
+		PerformedAt: ptrToTime(time.Now().UTC()),
+		Notes:       ptrToString("Test notes"),
+		ID:          "session-1",
 		UserID:      s.user.ID,
 		SessionType: ptrToString("workout"),
 	}
@@ -61,13 +63,40 @@ func (s *SessionRepositorySuite) TestCreateSessionInvalidUser() {
 	s.Require().Error(err)
 }
 
-func TestSessionRepository_AddSet(t *testing.T) {
-	t.Run("adds set successfully", func(t *testing.T) {
+func (s *SessionRepositorySuite) TestSessionRepository_AddSet() {
+	s.T().Run("adds set successfully", func(t *testing.T) {
+		rpe := 8
+		set := models.Set{
+			SessionID:  "1",
+			ExerciseID: "push-ups",
+			SetIndex:   0,
+			Reps:       10,
+			WeightKG:   0.0,
+			RPE:        &rpe,
+		}
 
+		addedSet, err := s.sessionRepo.AddSet(context.Background(), set)
+		require.NoError(t, err)
+		require.Equal(t, "1", addedSet.SessionID)
+		require.Equal(t, "push-ups", addedSet.ExerciseID)
+		require.Equal(t, 0, addedSet.SetIndex)
+		require.Equal(t, 10, addedSet.Reps)
+		require.Equal(t, 0.0, addedSet.WeightKG)
+		require.NotNil(t, addedSet.RPE)
+		require.Equal(t, 8, *addedSet.RPE)
 	})
 
-	t.Run("invalid session ID raises error", func(t *testing.T) {
-		t.Skip("TODO: implement session repository add set invalid id test")
+	s.T().Run("invalid session ID raises error", func(t *testing.T) {
+		set := models.Set{
+			SessionID:  "nonexistent",
+			ExerciseID: "push-ups",
+			SetIndex:   0,
+			Reps:       10,
+			WeightKG:   0.0,
+		}
+
+		_, err := s.sessionRepo.AddSet(context.Background(), set)
+		require.Error(t, err)
 	})
 }
 

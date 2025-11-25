@@ -8,6 +8,7 @@ import (
 	"github.com/alexanderramin/kalistheniks/internal/models"
 	"github.com/alexanderramin/kalistheniks/internal/services/mocks"
 	"github.com/golang/mock/gomock"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,11 +36,11 @@ func TestAuthService_Signup(t *testing.T) {
 
 	email := "test@example.com"
 	password := "password123"
+	userID := uuid.New()
 
 	t.Run("successful signup", func(t *testing.T) {
 		deps := newAuthDeps(t)
-		deps.usersRepo.EXPECT().Create(ctx, email, gomock.Any()).Return(models.User{ID: "user-123", Email: email}, nil)
-
+		deps.usersRepo.EXPECT().Create(ctx, email, gomock.Any()).Return(&models.User{ID: &userID, Email: email}, nil)
 		user, token, err := deps.svc.Signup(ctx, email, password)
 		require.NoError(t, err)
 		require.Equal(t, "user-123", user.ID)
@@ -60,10 +61,10 @@ func TestAuthService_Signup(t *testing.T) {
 
 func TestAuthService_Login(t *testing.T) {
 	const hashedPassword = "$2a$10$nzAyuLjvw2JKqKETtpFyvukYMwsMoAByVcziZ7RGnZUlQvehEJ8qq"
-
+	userID := uuid.New()
 	t.Run("successful login", func(t *testing.T) {
 		deps := newAuthDeps(t)
-		deps.usersRepo.EXPECT().FindByEmail(gomock.Any(), "test@example.com").Return(models.User{ID: "user-123", PasswordHash: hashedPassword}, nil)
+		deps.usersRepo.EXPECT().FindByEmail(gomock.Any(), "test@example.com").Return(&models.User{ID: &userID, PasswordHash: hashedPassword}, nil)
 
 		user, token, err := deps.svc.Login(context.Background(), "test@example.com", "password123")
 		require.NoError(t, err)
@@ -82,7 +83,7 @@ func TestAuthService_Login(t *testing.T) {
 	})
 	t.Run("invalid password", func(t *testing.T) {
 		deps := newAuthDeps(t)
-		deps.usersRepo.EXPECT().FindByEmail(gomock.Any(), "test@example.com").Return(models.User{ID: "user-123", PasswordHash: hashedPassword}, nil)
+		deps.usersRepo.EXPECT().FindByEmail(gomock.Any(), "test@example.com").Return(&models.User{ID: &userID, PasswordHash: hashedPassword}, nil)
 		user, token, err := deps.svc.Login(context.Background(), "test@example.com", "wrongpassword")
 		require.ErrorIs(t, err, ErrInvalidCredentials)
 		require.Empty(t, user)

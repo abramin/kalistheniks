@@ -8,6 +8,7 @@ import (
 
 	"github.com/alexanderramin/kalistheniks/internal/models"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type contextKey string
@@ -88,6 +89,11 @@ func (a *App) createSet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sessionID := chi.URLParam(r, "id")
+	sessionUUID, err := uuid.Parse(sessionID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid session ID")
+		return
+	}
 	var payload struct {
 		ExerciseID string  `json:"exercise_id"`
 		SetIndex   int     `json:"set_index"`
@@ -99,7 +105,12 @@ func (a *App) createSet(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	set, err := a.SessionService.AddSet(r.Context(), userID, sessionID, payload.ExerciseID, payload.SetIndex, payload.Reps, payload.WeightKG, payload.RPE)
+	exerciseUUID, err := uuid.Parse(payload.ExerciseID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid exercise ID")
+		return
+	}
+	set, err := a.SessionService.AddSet(r.Context(), userID, &sessionUUID, &exerciseUUID, payload.SetIndex, payload.Reps, payload.WeightKG, payload.RPE)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to add set")
 		return
@@ -179,7 +190,11 @@ func extractBearerToken(r *http.Request) string {
 	return ""
 }
 
-func currentUserID(r *http.Request) (string, bool) {
+func currentUserID(r *http.Request) (*uuid.UUID, bool) {
 	id, ok := r.Context().Value(userIDContextKey).(string)
-	return id, ok && id != ""
+	uid, err := uuid.Parse(id)
+	if !ok || err != nil {
+		return nil, false
+	}
+	return &uid, true
 }
