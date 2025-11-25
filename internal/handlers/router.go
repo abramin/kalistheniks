@@ -13,6 +13,12 @@ import (
 // Router registers HTTP routes for the API.
 func Router(app *App) http.Handler {
 	r := chi.NewRouter()
+
+	// Security middleware
+	r.Use(handlerMiddleware.SecurityHeaders)
+	r.Use(handlerMiddleware.CORS)
+
+	// Chi built-in middleware
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)

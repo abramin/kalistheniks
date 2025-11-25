@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/alexanderramin/kalistheniks/internal/config"
@@ -51,11 +53,41 @@ func main() {
 		Addr:              cfg.Addr,
 		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    1 << 20, // 1MB
 	}
 
-	logger.Printf("starting server on %s", cfg.Addr)
+	// Channel to listen for interrupt signals
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		logger.Fatalf("server error: %v", err)
+	// Start server in a goroutine
+	go func() {
+		logger.Printf("starting server on %s", cfg.Addr)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fatalf("server error: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal
+	<-stop
+	logger.Println("shutting down server gracefully...")
+
+	// Create shutdown context with timeout
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Attempt graceful shutdown
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logger.Printf("server shutdown error: %v", err)
 	}
+
+	// Close database connection
+	if err := database.Close(); err != nil {
+		logger.Printf("database close error: %v", err)
+	}
+
+	logger.Println("server stopped")
 }
