@@ -21,7 +21,6 @@ jobs:
           go test $(go list ./... | grep -v '/features$')
 
   cucumber:
-    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

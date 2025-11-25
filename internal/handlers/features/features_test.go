@@ -248,7 +248,19 @@ func (s *scenarioState) iPostSignupWithBody(body *godog.DocString) error {
 }
 
 func (s *scenarioState) iPostLoginWithBody(body *godog.DocString) error {
-	return s.doPostRequest("/login", body.Content, "")
+	if err := s.doPostRequest("/login", body.Content, ""); err != nil {
+		return err
+	}
+
+	// Capture token for later requests if present.
+	var resp map[string]interface{}
+	if err := json.Unmarshal(s.lastResponseBody, &resp); err == nil {
+		if token, ok := resp["token"].(string); ok && token != "" {
+			s.token = token
+		}
+	}
+
+	return nil
 }
 
 func (s *scenarioState) iPostSessionsWithHeaders(table *godog.Table) error {
