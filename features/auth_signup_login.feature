@@ -27,7 +27,7 @@ Feature: User signup and login to receive a JWT token
       {"email":"user@example.com","password":"AnotherPass!2"}
       """
     Then the response status should be 400
-    And the response JSON should include an "error" explaining the email is taken
+    And the response JSON field "error" should contain "email"
 
   Scenario: Login fails with wrong password
     Given a user exists with email "user@example.com" and password "StrongPass!1"
@@ -36,7 +36,7 @@ Feature: User signup and login to receive a JWT token
       {"email":"user@example.com","password":"WrongPass"}
       """
     Then the response status should be 401
-    And the response JSON should include "error":"invalid credentials"
+    And the response JSON field "error" should be "invalid credentials"
 
   Scenario: Signup fails with missing fields
     When I POST /signup with body:
@@ -44,4 +44,4 @@ Feature: User signup and login to receive a JWT token
       {"email":"","password":""}
       """
     Then the response status should be 400
-    And the response JSON should include an "error" about invalid request body
+    And the response JSON field "error" should contain "invalid"
