@@ -3,6 +3,7 @@ package plan
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/alexanderramin/kalistheniks/internal/models"
 	"github.com/google/uuid"
@@ -25,6 +26,9 @@ func NewPlanService(repo SessionRepository) *PlanService {
 // TODO: replace with a proper rule engine integration.
 // NextSuggestion returns a naive progression recommendation based on the last recorded set.
 func (p *PlanService) NextSuggestion(ctx context.Context, userID uuid.UUID) (*models.PlanSuggestion, error) {
+	if userID == uuid.Nil {
+		return nil, errors.New("invalid user ID")
+	}
 	lastSet, err := p.sessions.GetLastSet(ctx, userID)
 	if err != nil {
 		if err == sql.ErrNoRows {

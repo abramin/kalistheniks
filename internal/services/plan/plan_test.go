@@ -3,7 +3,6 @@ package plan
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"testing"
 
 	"github.com/alexanderramin/kalistheniks/internal/models"
@@ -121,8 +120,6 @@ func TestPlanService_NextSuggestion(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		mockSessionRepository := mocks.NewMockSessionRepository(ctrl)
-
-		mockSessionRepository.EXPECT().GetLastSet(ctx, nil).Return(nil, errors.New("invalid user ID"))
 
 		service := NewPlanService(mockSessionRepository)
 		_, err := service.NextSuggestion(ctx, uuid.Nil)
