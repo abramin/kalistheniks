@@ -12,6 +12,7 @@ import (
 
 	"github.com/alexanderramin/kalistheniks/pkg/db"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
+	"runtime"
 )
 
 func WaitForDB(ctx context.Context, database *sql.DB, timeout time.Duration) error {
@@ -53,7 +54,16 @@ func RunMigrations(ctx context.Context, database *sql.DB, dir string) error {
 	return nil
 }
 
-var migrationsDir = filepath.Join("..", "..", "migrations")
+var migrationsDir = defaultMigrationsDir()
+
+func defaultMigrationsDir() string {
+	// Resolve migrations path relative to this file so it works regardless of test working dir.
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		return filepath.Join("..", "..", "migrations")
+	}
+	return filepath.Join(filepath.Dir(filename), "..", "..", "migrations")
+}
 
 func StartPostgresContainer(ctx context.Context) (*sql.DB, func(), error) {
 	pg, err := postgres.Run(ctx, "postgres:16-alpine")
