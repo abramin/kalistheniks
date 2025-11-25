@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: kalistheniks
       POSTGRES_PASSWORD: kalistheniks
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -15,6 +15,35 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  migrate:
+    image: migrate/migrate:v4.17.1
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations:ro
+    command: ["-path", "/migrations", "-database", "postgres://kalistheniks:kalistheniks@db:5432/kalistheniks?sslmode=disable", "up"]
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      ADDR: ":8080"
+      DB_DSN: "postgres://kalistheniks:kalistheniks@db:5432/kalistheniks?sslmode=disable"
+      JWT_SECRET: "dev-secret-change-me"
+      ENV: "development"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
   pgdata:
