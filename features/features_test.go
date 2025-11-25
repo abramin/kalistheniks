@@ -26,11 +26,10 @@ import (
 )
 
 var (
-	testDB        *sql.DB
-	testCleanup   func()
-	testServer    *httptest.Server
-	jwtSecret     = "test-jwt-secret-key-for-godog-tests"
-	migrationsDir = "../migrations"
+	testDB      *sql.DB
+	testCleanup func()
+	testServer  *httptest.Server
+	jwtSecret   = "test-jwt-secret-key-for-godog-tests"
 )
 
 type scenarioState struct {
@@ -45,7 +44,7 @@ type scenarioState struct {
 func TestFeatures(t *testing.T) {
 	opts := godog.Options{
 		Output: colors.Colored(os.Stdout),
-		Paths:  []string{"features"},
+		Paths:  []string{"."},
 		Strict: true,
 		Format: "pretty",
 	}
