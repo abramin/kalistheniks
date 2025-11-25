@@ -5,20 +5,19 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/alexanderramin/kalistheniks/internal/handlers/contracts"
 	"github.com/alexanderramin/kalistheniks/internal/handlers/middleware"
 	"github.com/alexanderramin/kalistheniks/internal/handlers/response"
-	"github.com/alexanderramin/kalistheniks/internal/services"
-	"github.com/alexanderramin/kalistheniks/internal/services/plan"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
 type Handler struct {
-	Sessions *services.SessionService
-	Plans    *plan.PlanService
+	Sessions contracts.SessionService
+	Plans    contracts.PlanService
 }
 
-func New(sessions *services.SessionService, plans *plan.PlanService) *Handler {
+func New(sessions contracts.SessionService, plans contracts.PlanService) *Handler {
 	return &Handler{
 		Sessions: sessions,
 		Plans:    plans,
@@ -76,7 +75,7 @@ func (h *Handler) CreateSet(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusBadRequest, "invalid exercise ID")
 		return
 	}
-	set, err := h.Sessions.AddSet(r.Context(), userID, &sessionUUID, &exerciseUUID, payload.SetIndex, payload.Reps, payload.WeightKG, payload.RPE)
+	set, err := h.Sessions.AddSet(r.Context(), userID, sessionUUID, exerciseUUID, payload.SetIndex, payload.Reps, payload.WeightKG, payload.RPE)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "failed to add set")
 		return

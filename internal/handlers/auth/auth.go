@@ -4,16 +4,16 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/alexanderramin/kalistheniks/internal/handlers/contracts"
 	"github.com/alexanderramin/kalistheniks/internal/handlers/response"
 	"github.com/alexanderramin/kalistheniks/internal/models"
-	"github.com/alexanderramin/kalistheniks/internal/services"
 )
 
 type Handler struct {
-	AuthService *services.AuthService
+	AuthService contracts.AuthService
 }
 
-func New(auth *services.AuthService) *Handler {
+func New(auth contracts.AuthService) *Handler {
 	return &Handler{AuthService: auth}
 }
 

@@ -14,7 +14,7 @@ func TestGenerateAndParseToken(t *testing.T) {
 	t.Run("round trip success", func(t *testing.T) {
 		secret := "supersecret"
 
-		token, err := GenerateToken(&userID, secret)
+		token, err := GenerateToken(userID, secret)
 		require.NoError(t, err)
 		require.NotEmpty(t, token)
 
@@ -25,7 +25,7 @@ func TestGenerateAndParseToken(t *testing.T) {
 	})
 
 	t.Run("invalid signature", func(t *testing.T) {
-		token, err := GenerateToken(&userID, "secret-a")
+		token, err := GenerateToken(userID, "secret-a")
 		require.NoError(t, err)
 
 		parsedUser, err := ParseToken(token, "secret-b")
@@ -67,7 +67,7 @@ func TestGenerateAndParseToken(t *testing.T) {
 	t.Run("token contains correct claims", func(t *testing.T) {
 		secret := "anothersecret"
 
-		tokenString, err := GenerateToken(&userID, secret)
+		tokenString, err := GenerateToken(userID, secret)
 		require.NoError(t, err)
 		token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return []byte(secret), nil

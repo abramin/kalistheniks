@@ -41,8 +41,8 @@ RETURNING id, session_id, exercise_id, set_index, reps, weight_kg, rpe`
 	return &out, err
 }
 
-func (r *SessionRepository) ListWithSets(ctx context.Context, userID *uuid.UUID) ([]*models.Session, error) {
-	if userID == nil {
+func (r *SessionRepository) ListWithSets(ctx context.Context, userID uuid.UUID) ([]*models.Session, error) {
+	if userID == uuid.Nil {
 		return nil, errors.New("userID cannot be nil")
 	}
 
@@ -75,7 +75,7 @@ ORDER BY s.performed_at DESC, st.set_index ASC`
 
 		err = rows.Scan(
 			&s.ID, &s.UserID, &s.PerformedAt, &notes, &sessionType,
-			&setID, &setSessionID, &exerciseID, &setIndex, &reps, &weight, &rpe,
+			&setID, &setSessionID, exerciseID, &setIndex, &reps, &weight, &rpe,
 		)
 		if err != nil {
 			return nil, err
@@ -107,29 +107,19 @@ ORDER BY s.performed_at DESC, st.set_index ASC`
 			if err != nil {
 				return nil, err
 			}
-			// parse session ID if present
-			var sessionIDPtr *uuid.UUID
-			if setSessionID.Valid {
-				sid, err := uuid.Parse(setSessionID.String)
-				if err != nil {
-					return nil, err
-				}
-				sessionIDPtr = &sid
+			sid, err := uuid.Parse(setSessionID.String)
+			if err != nil {
+				return nil, err
 			}
-			// parse exercise ID if present
-			var exerciseIDPtr *uuid.UUID
-			if exerciseID.Valid {
-				eid, err := uuid.Parse(exerciseID.String)
-				if err != nil {
-					return nil, err
-				}
-				exerciseIDPtr = &eid
+			eid, err := uuid.Parse(exerciseID.String)
+			if err != nil {
+				return nil, err
 			}
 
-			set := &models.Set{
-				ID:         &idParsed,
-				SessionID:  sessionIDPtr,
-				ExerciseID: exerciseIDPtr,
+			set := models.Set{
+				ID:         idParsed,
+				SessionID:  sid,
+				ExerciseID: eid,
 				SetIndex:   int(setIndex.Int64),
 				Reps:       int(reps.Int64),
 				WeightKG:   weight.Float64,
@@ -138,7 +128,7 @@ ORDER BY s.performed_at DESC, st.set_index ASC`
 				value := int(rpe.Int64)
 				set.RPE = &value
 			}
-			session.Sets = append(session.Sets, *set)
+			session.Sets = append(session.Sets, set)
 		}
 	}
 
@@ -149,7 +139,7 @@ ORDER BY s.performed_at DESC, st.set_index ASC`
 	return result, rows.Err()
 }
 
-func (r *SessionRepository) GetLastSet(ctx context.Context, userID *uuid.UUID) (*models.Set, error) {
+func (r *SessionRepository) GetLastSet(ctx context.Context, userID uuid.UUID) (*models.Set, error) {
 	const q = `
 SELECT st.id, st.session_id, st.exercise_id, st.set_index, st.reps, st.weight_kg, st.rpe
 FROM sets st
@@ -167,7 +157,7 @@ LIMIT 1`
 	return &set, err
 }
 
-func (r *SessionRepository) GetLastSession(ctx context.Context, userID *uuid.UUID) (*models.Session, error) {
+func (r *SessionRepository) GetLastSession(ctx context.Context, userID uuid.UUID) (*models.Session, error) {
 	const q = `
 SELECT id, user_id, performed_at, notes, session_type
 FROM sessions
@@ -191,7 +181,7 @@ LIMIT 1`
 	return &s, err
 }
 
-func (r *SessionRepository) SessionBelongsToUser(ctx context.Context, sessionID, userID *uuid.UUID) (bool, error) {
+func (r *SessionRepository) SessionBelongsToUser(ctx context.Context, sessionID, userID uuid.UUID) (bool, error) {
 	const q = `
 SELECT 1
 FROM sessions

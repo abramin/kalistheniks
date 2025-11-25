@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/alexanderramin/kalistheniks/internal/handlers/contracts"
 	"github.com/alexanderramin/kalistheniks/internal/handlers/response"
-	"github.com/alexanderramin/kalistheniks/internal/services"
 	"github.com/google/uuid"
 )
 
@@ -14,10 +14,10 @@ type contextKey string
 const userIDContextKey contextKey = "userID"
 
 type Auth struct {
-	auth *services.AuthService
+	auth contracts.AuthService
 }
 
-func NewAuth(auth *services.AuthService) *Auth {
+func NewAuth(auth contracts.AuthService) *Auth {
 	return &Auth{auth: auth}
 }
 
@@ -40,13 +40,13 @@ func (m *Auth) RequireAuth(next http.Handler) http.Handler {
 }
 
 // CurrentUserID extracts the authenticated user ID from the request context.
-func CurrentUserID(r *http.Request) (*uuid.UUID, bool) {
+func CurrentUserID(r *http.Request) (uuid.UUID, bool) {
 	id, ok := r.Context().Value(userIDContextKey).(string)
 	uid, err := uuid.Parse(id)
 	if !ok || err != nil {
-		return nil, false
+		return uuid.UUID{}, false
 	}
-	return &uid, true
+	return uid, true
 }
 
 // ExtractBearerToken pulls a bearer token from the Authorization header.

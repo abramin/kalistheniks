@@ -43,7 +43,7 @@ WHERE email = $1`
 	return &u, err
 }
 
-func (r *UserRepository) FindByID(ctx context.Context, id *uuid.UUID) (*models.User, error) {
+func (r *UserRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	const q = `
 SELECT id, email, password_hash, created_at, updated_at
 FROM users

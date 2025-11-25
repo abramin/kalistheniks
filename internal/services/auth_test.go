@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//go:generate mockgen -source=auth.go -destination=../services/mocks/services_mock.go -package=mocks AuthService
+//go:generate mockgen -source=auth.go -destination=./mocks/services_mock.go -package=mocks AuthService
 
 type authDeps struct {
 	ctrl      *gomock.Controller
@@ -40,10 +40,10 @@ func TestAuthService_Signup(t *testing.T) {
 
 	t.Run("successful signup", func(t *testing.T) {
 		deps := newAuthDeps(t)
-		deps.usersRepo.EXPECT().Create(ctx, email, gomock.Any()).Return(&models.User{ID: &userID, Email: email}, nil)
+		deps.usersRepo.EXPECT().Create(ctx, email, gomock.Any()).Return(&models.User{ID: userID, Email: email}, nil)
 		user, token, err := deps.svc.Signup(ctx, email, password)
 		require.NoError(t, err)
-		require.Equal(t, &userID, user.ID)
+		require.Equal(t, userID, user.ID)
 		require.NotEmpty(t, token)
 	})
 
@@ -64,11 +64,11 @@ func TestAuthService_Login(t *testing.T) {
 	userID := uuid.New()
 	t.Run("successful login", func(t *testing.T) {
 		deps := newAuthDeps(t)
-		deps.usersRepo.EXPECT().FindByEmail(gomock.Any(), "test@example.com").Return(&models.User{ID: &userID, PasswordHash: hashedPassword}, nil)
+		deps.usersRepo.EXPECT().FindByEmail(gomock.Any(), "test@example.com").Return(&models.User{ID: userID, PasswordHash: hashedPassword}, nil)
 
 		user, token, err := deps.svc.Login(context.Background(), "test@example.com", "password123")
 		require.NoError(t, err)
-		require.Equal(t, &userID, user.ID)
+		require.Equal(t, userID, user.ID)
 		require.NotEmpty(t, token)
 	})
 
@@ -83,7 +83,7 @@ func TestAuthService_Login(t *testing.T) {
 	})
 	t.Run("invalid password", func(t *testing.T) {
 		deps := newAuthDeps(t)
-		deps.usersRepo.EXPECT().FindByEmail(gomock.Any(), "test@example.com").Return(&models.User{ID: &userID, PasswordHash: hashedPassword}, nil)
+		deps.usersRepo.EXPECT().FindByEmail(gomock.Any(), "test@example.com").Return(&models.User{ID: userID, PasswordHash: hashedPassword}, nil)
 		user, token, err := deps.svc.Login(context.Background(), "test@example.com", "wrongpassword")
 		require.ErrorIs(t, err, ErrInvalidCredentials)
 		require.Empty(t, user)

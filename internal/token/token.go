@@ -9,7 +9,7 @@ import (
 )
 
 // GenerateToken creates a signed JWT for the provided user.
-func GenerateToken(userID *uuid.UUID, secret string) (string, error) {
+func GenerateToken(userID uuid.UUID, secret string) (string, error) {
 	claims := jwt.RegisteredClaims{
 		Subject:   userID.String(),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),

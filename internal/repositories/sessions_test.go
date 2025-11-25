@@ -17,7 +17,7 @@ type SessionRepositorySuite struct {
 	userRepo    *UserRepository
 	ctx         context.Context
 	user        *models.User
-	exerciseID  *uuid.UUID
+	exerciseID  uuid.UUID
 }
 
 func TestSessionRepositorySuite(t *testing.T) {
@@ -57,7 +57,7 @@ func (s *SessionRepositorySuite) TestCreateSessionNoneExistentUser() {
 	ctx := context.Background()
 	otherID := uuid.New()
 	session := &models.Session{
-		UserID:      &otherID,
+		UserID:      otherID,
 		SessionType: ptrToString("workout"),
 	}
 
@@ -99,7 +99,7 @@ func (s *SessionRepositorySuite) TestSessionRepository_AddSet() {
 	s.T().Run("invalid session ID raises error", func(t *testing.T) {
 		otherID := uuid.New()
 		set := &models.Set{
-			SessionID:  &otherID,
+			SessionID:  otherID,
 			ExerciseID: s.exerciseID,
 			SetIndex:   0,
 			Reps:       10,
@@ -154,14 +154,14 @@ func (s *SessionRepositorySuite) TestSessionRepository_ListWithSets() {
 	s.T().Run("invalid user ID returns empty list", func(t *testing.T) {
 		s.truncateSessions()
 		otherID := uuid.New()
-		sessions, err := s.sessionRepo.ListWithSets(context.Background(), &otherID)
+		sessions, err := s.sessionRepo.ListWithSets(context.Background(), otherID)
 		require.NoError(t, err)
 		require.Len(t, sessions, 0)
 	})
 
 	s.T().Run("nil user ID returns error", func(t *testing.T) {
 		s.truncateSessions()
-		_, err := s.sessionRepo.ListWithSets(context.Background(), nil)
+		_, err := s.sessionRepo.ListWithSets(context.Background(), uuid.Nil)
 		require.Error(t, err)
 	})
 }
@@ -214,7 +214,7 @@ func (s *SessionRepositorySuite) TestSessionRepository_GetLastSet() {
 
 	s.T().Run("nil user ID returns error", func(t *testing.T) {
 		s.truncateSessions()
-		_, err := s.sessionRepo.GetLastSet(context.Background(), nil)
+		_, err := s.sessionRepo.GetLastSet(context.Background(), uuid.Nil)
 		require.Error(t, err)
 	})
 }
@@ -255,7 +255,7 @@ func (s *SessionRepositorySuite) TestSessionRepository_GetLastSession() {
 
 	s.T().Run("nil user ID returns error", func(t *testing.T) {
 		s.truncateSessions()
-		_, err := s.sessionRepo.GetLastSession(context.Background(), nil)
+		_, err := s.sessionRepo.GetLastSession(context.Background(), uuid.Nil)
 		require.Error(t, err)
 	})
 }
@@ -278,14 +278,14 @@ func (s *SessionRepositorySuite) TestSessionRepository_SessionBelongsToUser() {
 
 	s.T().Run("session does not belong to user", func(t *testing.T) {
 		otherID := uuid.New()
-		belongs, err := s.sessionRepo.SessionBelongsToUser(context.Background(), &otherID, s.user.ID)
+		belongs, err := s.sessionRepo.SessionBelongsToUser(context.Background(), otherID, s.user.ID)
 		require.NoError(t, err)
 		require.False(t, belongs)
 	})
 
 	s.T().Run("	invalid session ID returns false", func(t *testing.T) {
 		otherID := uuid.New()
-		belongs, err := s.sessionRepo.SessionBelongsToUser(context.Background(), &otherID, s.user.ID)
+		belongs, err := s.sessionRepo.SessionBelongsToUser(context.Background(), otherID, s.user.ID)
 		require.NoError(t, err)
 		require.False(t, belongs)
 	})
