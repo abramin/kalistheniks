@@ -17,6 +17,7 @@ type SessionRepositorySuite struct {
 	userRepo    *UserRepository
 	ctx         context.Context
 	user        *models.User
+	exerciseID  *uuid.UUID
 }
 
 func TestSessionRepositorySuite(t *testing.T) {
@@ -29,18 +30,18 @@ func (s *SessionRepositorySuite) SetupSuite() {
 	var err error
 	s.user, err = s.userRepo.Create(s.ctx, "session-user@example.com", "hash")
 	s.Require().NoError(err)
+	err = testDB.QueryRowContext(s.ctx, `INSERT INTO exercises (name) VALUES ('push-ups') RETURNING id`).Scan(&s.exerciseID)
+	s.Require().NoError(err)
 }
 
 func (s *SessionRepositorySuite) SetupTest() {
-	truncateSessions(s.T())
 	s.sessionRepo = NewSessionRepository(testDB)
 }
 
 func (s *SessionRepositorySuite) TestCreateSessionSuccess() {
-	session := models.Session{
-		PerformedAt: ptrToTime(time.Now().UTC()),
+	session := &models.Session{
+		PerformedAt: time.Now().UTC(),
 		Notes:       ptrToString("Test notes"),
-		ID:          "session-1",
 		UserID:      s.user.ID,
 		SessionType: ptrToString("workout"),
 	}
@@ -52,10 +53,11 @@ func (s *SessionRepositorySuite) TestCreateSessionSuccess() {
 	s.Require().NotEmpty(created.ID)
 }
 
-func (s *SessionRepositorySuite) TestCreateSessionInvalidUser() {
+func (s *SessionRepositorySuite) TestCreateSessionNoneExistentUser() {
 	ctx := context.Background()
-	session := models.Session{
-		UserID:      uuid.NewString(),
+	otherID := uuid.New()
+	session := &models.Session{
+		UserID:      &otherID,
 		SessionType: ptrToString("workout"),
 	}
 
@@ -65,10 +67,18 @@ func (s *SessionRepositorySuite) TestCreateSessionInvalidUser() {
 
 func (s *SessionRepositorySuite) TestSessionRepository_AddSet() {
 	s.T().Run("adds set successfully", func(t *testing.T) {
+		session := &models.Session{
+			PerformedAt: time.Now().UTC(),
+			Notes:       ptrToString("Test notes"),
+			UserID:      s.user.ID,
+			SessionType: ptrToString("workout"),
+		}
+		createdSession, err := s.sessionRepo.Create(context.Background(), session)
+		require.NoError(t, err)
 		rpe := 8
-		set := models.Set{
-			SessionID:  "1",
-			ExerciseID: "push-ups",
+		set := &models.Set{
+			SessionID:  createdSession.ID,
+			ExerciseID: s.exerciseID,
 			SetIndex:   0,
 			Reps:       10,
 			WeightKG:   0.0,
@@ -77,8 +87,8 @@ func (s *SessionRepositorySuite) TestSessionRepository_AddSet() {
 
 		addedSet, err := s.sessionRepo.AddSet(context.Background(), set)
 		require.NoError(t, err)
-		require.Equal(t, "1", addedSet.SessionID)
-		require.Equal(t, "push-ups", addedSet.ExerciseID)
+		require.Equal(t, createdSession.ID, addedSet.SessionID)
+		require.Equal(t, s.exerciseID, addedSet.ExerciseID)
 		require.Equal(t, 0, addedSet.SetIndex)
 		require.Equal(t, 10, addedSet.Reps)
 		require.Equal(t, 0.0, addedSet.WeightKG)
@@ -87,9 +97,10 @@ func (s *SessionRepositorySuite) TestSessionRepository_AddSet() {
 	})
 
 	s.T().Run("invalid session ID raises error", func(t *testing.T) {
-		set := models.Set{
-			SessionID:  "nonexistent",
-			ExerciseID: "push-ups",
+		otherID := uuid.New()
+		set := &models.Set{
+			SessionID:  &otherID,
+			ExerciseID: s.exerciseID,
 			SetIndex:   0,
 			Reps:       10,
 			WeightKG:   0.0,
@@ -100,32 +111,192 @@ func (s *SessionRepositorySuite) TestSessionRepository_AddSet() {
 	})
 }
 
-func TestSessionRepository_ListWithSets(t *testing.T) {
-	t.Skip("TODO: implement session repository list with sets test")
-	_ = require.New(t)
+func (s *SessionRepositorySuite) TestSessionRepository_ListWithSets() {
+	s.T().Run("lists sessions with sets successfully", func(t *testing.T) {
+		s.truncateSessions()
+		// Create a session
+		session := &models.Session{
+			PerformedAt: time.Now().UTC(),
+			Notes:       ptrToString("Test notes"),
+			UserID:      s.user.ID,
+			SessionType: ptrToString("workout"),
+		}
+		createdSession, err := s.sessionRepo.Create(context.Background(), session)
+		require.NoError(t, err)
+
+		// Add a set to the session
+		set := &models.Set{
+			SessionID:  createdSession.ID,
+			ExerciseID: s.exerciseID,
+			SetIndex:   0,
+			Reps:       10,
+			WeightKG:   0.0,
+		}
+		_, err = s.sessionRepo.AddSet(context.Background(), set)
+		require.NoError(t, err)
+
+		// List sessions with sets
+		sessions, err := s.sessionRepo.ListWithSets(context.Background(), s.user.ID)
+		require.NoError(t, err)
+		require.Len(t, sessions, 1)
+		require.Equal(t, createdSession.ID, sessions[0].ID)
+		require.Len(t, sessions[0].Sets, 1)
+		require.Equal(t, 10, sessions[0].Sets[0].Reps)
+	})
+
+	s.T().Run("no sessions returns empty list", func(t *testing.T) {
+		s.truncateSessions()
+		sessions, err := s.sessionRepo.ListWithSets(context.Background(), s.user.ID)
+		require.NoError(t, err)
+		require.Len(t, sessions, 0)
+	})
+
+	s.T().Run("invalid user ID returns empty list", func(t *testing.T) {
+		s.truncateSessions()
+		otherID := uuid.New()
+		sessions, err := s.sessionRepo.ListWithSets(context.Background(), &otherID)
+		require.NoError(t, err)
+		require.Len(t, sessions, 0)
+	})
+
+	s.T().Run("nil user ID returns error", func(t *testing.T) {
+		s.truncateSessions()
+		_, err := s.sessionRepo.ListWithSets(context.Background(), nil)
+		require.Error(t, err)
+	})
 }
 
-func TestSessionRepository_GetLastSet(t *testing.T) {
-	t.Skip("TODO: implement session repository get last set test")
-	_ = require.New(t)
+func (s *SessionRepositorySuite) TestSessionRepository_GetLastSet() {
+	s.T().Run("gets last set successfully", func(t *testing.T) {
+		s.truncateSessions()
+		session := &models.Session{
+			PerformedAt: time.Now().UTC(),
+			Notes:       ptrToString("Test notes"),
+			UserID:      s.user.ID,
+			SessionType: ptrToString("workout"),
+		}
+		createdSession, err := s.sessionRepo.Create(context.Background(), session)
+		require.NoError(t, err)
+
+		// Add two sets to the session
+		set1 := &models.Set{
+			SessionID:  createdSession.ID,
+			ExerciseID: s.exerciseID,
+			SetIndex:   0,
+			Reps:       10,
+			WeightKG:   0.0,
+		}
+		_, err = s.sessionRepo.AddSet(context.Background(), set1)
+		require.NoError(t, err)
+
+		set2 := &models.Set{
+			SessionID:  createdSession.ID,
+			ExerciseID: s.exerciseID,
+			SetIndex:   1,
+			Reps:       8,
+			WeightKG:   0.0,
+		}
+		_, err = s.sessionRepo.AddSet(context.Background(), set2)
+		require.NoError(t, err)
+
+		// Get last set
+		lastSet, err := s.sessionRepo.GetLastSet(context.Background(), s.user.ID)
+		require.NoError(t, err)
+		require.Equal(t, 8, lastSet.Reps)
+		require.Equal(t, 1, lastSet.SetIndex)
+	})
+
+	s.T().Run("no sets returns nil", func(t *testing.T) {
+		s.truncateSessions()
+		_, err := s.sessionRepo.GetLastSet(context.Background(), s.user.ID)
+		require.Error(t, err)
+	})
+
+	s.T().Run("nil user ID returns error", func(t *testing.T) {
+		s.truncateSessions()
+		_, err := s.sessionRepo.GetLastSet(context.Background(), nil)
+		require.Error(t, err)
+	})
 }
 
-func TestSessionRepository_GetLastSession(t *testing.T) {
-	t.Skip("TODO: implement session repository get last session test")
-	_ = require.New(t)
+func (s *SessionRepositorySuite) TestSessionRepository_GetLastSession() {
+	s.T().Run("gets last session successfully", func(t *testing.T) {
+		s.truncateSessions()
+		// Create two sessions
+		session1 := &models.Session{
+			PerformedAt: time.Now().Add(-2 * time.Hour).UTC(),
+			Notes:       ptrToString("First session"),
+			UserID:      s.user.ID,
+			SessionType: ptrToString("workout"),
+		}
+		_, err := s.sessionRepo.Create(context.Background(), session1)
+		require.NoError(t, err)
+
+		session2 := &models.Session{
+			PerformedAt: time.Now().Add(-1 * time.Hour).UTC(),
+			Notes:       ptrToString("Second session"),
+			UserID:      s.user.ID,
+			SessionType: ptrToString("workout"),
+		}
+		createdSession2, err := s.sessionRepo.Create(context.Background(), session2)
+		require.NoError(t, err)
+
+		// Get last session
+		lastSession, err := s.sessionRepo.GetLastSession(context.Background(), s.user.ID)
+		require.NoError(t, err)
+		require.Equal(t, createdSession2.ID, lastSession.ID)
+	})
+
+	s.T().Run("no sessions returns nil", func(t *testing.T) {
+		s.truncateSessions()
+		_, err := s.sessionRepo.GetLastSession(context.Background(), s.user.ID)
+		require.Error(t, err)
+	})
+
+	s.T().Run("nil user ID returns error", func(t *testing.T) {
+		s.truncateSessions()
+		_, err := s.sessionRepo.GetLastSession(context.Background(), nil)
+		require.Error(t, err)
+	})
 }
 
-func TestSessionRepository_SessionBelongsToUser(t *testing.T) {
-	t.Skip("TODO: implement session repository session belongs to user test")
-	_ = require.New(t)
+func (s *SessionRepositorySuite) TestSessionRepository_SessionBelongsToUser() {
+	s.T().Run("session belongs to user", func(t *testing.T) {
+		session := &models.Session{
+			PerformedAt: time.Now().UTC(),
+			Notes:       ptrToString("Test notes"),
+			UserID:      s.user.ID,
+			SessionType: ptrToString("workout"),
+		}
+		createdSession, err := s.sessionRepo.Create(context.Background(), session)
+		require.NoError(t, err)
+
+		belongs, err := s.sessionRepo.SessionBelongsToUser(context.Background(), createdSession.ID, s.user.ID)
+		require.NoError(t, err)
+		require.True(t, belongs)
+	})
+
+	s.T().Run("session does not belong to user", func(t *testing.T) {
+		otherID := uuid.New()
+		belongs, err := s.sessionRepo.SessionBelongsToUser(context.Background(), &otherID, s.user.ID)
+		require.NoError(t, err)
+		require.False(t, belongs)
+	})
+
+	s.T().Run("	invalid session ID returns false", func(t *testing.T) {
+		otherID := uuid.New()
+		belongs, err := s.sessionRepo.SessionBelongsToUser(context.Background(), &otherID, s.user.ID)
+		require.NoError(t, err)
+		require.False(t, belongs)
+	})
 }
 
 func ptrToString(s string) *string {
 	return &s
 }
 
-func truncateSessions(t *testing.T) {
-
-	_, err := testDB.Exec("TRUNCATE TABLE sessions RESTART IDENTITY CASCADE")
-	require.NoError(t, err)
+func (s *SessionRepositorySuite) truncateSessions() {
+	s.T().Helper()
+	_, err := testDB.Exec("TRUNCATE TABLE sets RESTART IDENTITY CASCADE; TRUNCATE TABLE sessions RESTART IDENTITY CASCADE")
+	require.NoError(s.T(), err)
 }

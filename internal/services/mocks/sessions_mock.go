@@ -10,6 +10,7 @@ import (
 
 	models "github.com/alexanderramin/kalistheniks/internal/models"
 	gomock "github.com/golang/mock/gomock"
+	uuid "github.com/google/uuid"
 )
 
 // MockSessionRepository is a mock of SessionRepository interface.
@@ -36,10 +37,10 @@ func (m *MockSessionRepository) EXPECT() *MockSessionRepositoryMockRecorder {
 }
 
 // AddSet mocks base method.
-func (m *MockSessionRepository) AddSet(ctx context.Context, set models.Set) (models.Set, error) {
+func (m *MockSessionRepository) AddSet(ctx context.Context, set *models.Set) (*models.Set, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddSet", ctx, set)
-	ret0, _ := ret[0].(models.Set)
+	ret0, _ := ret[0].(*models.Set)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -51,10 +52,10 @@ func (mr *MockSessionRepositoryMockRecorder) AddSet(ctx, set interface{}) *gomoc
 }
 
 // Create mocks base method.
-func (m *MockSessionRepository) Create(ctx context.Context, s models.Session) (models.Session, error) {
+func (m *MockSessionRepository) Create(ctx context.Context, s *models.Session) (*models.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", ctx, s)
-	ret0, _ := ret[0].(models.Session)
+	ret0, _ := ret[0].(*models.Session)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -66,10 +67,10 @@ func (mr *MockSessionRepositoryMockRecorder) Create(ctx, s interface{}) *gomock.
 }
 
 // ListWithSets mocks base method.
-func (m *MockSessionRepository) ListWithSets(ctx context.Context, userID string) ([]models.Session, error) {
+func (m *MockSessionRepository) ListWithSets(ctx context.Context, userID *uuid.UUID) ([]*models.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListWithSets", ctx, userID)
-	ret0, _ := ret[0].([]models.Session)
+	ret0, _ := ret[0].([]*models.Session)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -81,7 +82,7 @@ func (mr *MockSessionRepositoryMockRecorder) ListWithSets(ctx, userID interface{
 }
 
 // SessionBelongsToUser mocks base method.
-func (m *MockSessionRepository) SessionBelongsToUser(ctx context.Context, sessionID, userID string) (bool, error) {
+func (m *MockSessionRepository) SessionBelongsToUser(ctx context.Context, sessionID, userID *uuid.UUID) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SessionBelongsToUser", ctx, sessionID, userID)
 	ret0, _ := ret[0].(bool)

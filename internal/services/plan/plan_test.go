@@ -24,13 +24,13 @@ func TestPlanService_NextSuggestion(t *testing.T) {
 		mockSessionRepository := mocks.NewMockSessionRepository(ctrl)
 
 		service := NewPlanService(mockSessionRepository)
-		mockSessionRepository.EXPECT().GetLastSet(ctx, &userID).Return(models.Set{
+		mockSessionRepository.EXPECT().GetLastSet(ctx, &userID).Return(&models.Set{
 			ExerciseID: &exerciseID,
 			WeightKG:   0.0,
 			Reps:       10,
 		}, nil)
 		stype := "workout"
-		mockSessionRepository.EXPECT().GetLastSession(ctx, &userID).Return(models.Session{
+		mockSessionRepository.EXPECT().GetLastSession(ctx, &userID).Return(&models.Session{
 			SessionType: &stype,
 		}, nil)
 		suggestion, err := service.NextSuggestion(ctx, &userID)
@@ -46,7 +46,7 @@ func TestPlanService_NextSuggestion(t *testing.T) {
 		mockSessionRepository := mocks.NewMockSessionRepository(ctrl)
 
 		service := NewPlanService(mockSessionRepository)
-		mockSessionRepository.EXPECT().GetLastSet(ctx, &userID).Return(models.Set{}, sql.ErrNoRows)
+		mockSessionRepository.EXPECT().GetLastSet(ctx, &userID).Return(nil, sql.ErrNoRows)
 		suggestion, err := service.NextSuggestion(ctx, &userID)
 		require.NoError(t, err)
 		require.Equal(t, 20.0, suggestion.WeightKG)
@@ -59,13 +59,13 @@ func TestPlanService_NextSuggestion(t *testing.T) {
 		mockSessionRepository := mocks.NewMockSessionRepository(ctrl)
 
 		service := NewPlanService(mockSessionRepository)
-		mockSessionRepository.EXPECT().GetLastSet(ctx, &userID).Return(models.Set{
+		mockSessionRepository.EXPECT().GetLastSet(ctx, &userID).Return(&models.Set{
 			ExerciseID: &exerciseID,
 			WeightKG:   40.0,
 			Reps:       13,
 		}, nil)
 		stype := "workout"
-		mockSessionRepository.EXPECT().GetLastSession(ctx, userID).Return(models.Session{
+		mockSessionRepository.EXPECT().GetLastSession(ctx, &userID).Return(&models.Session{
 			SessionType: &stype,
 		}, nil)
 		suggestion, err := service.NextSuggestion(ctx, &userID)
@@ -81,13 +81,13 @@ func TestPlanService_NextSuggestion(t *testing.T) {
 		mockSessionRepository := mocks.NewMockSessionRepository(ctrl)
 
 		service := NewPlanService(mockSessionRepository)
-		mockSessionRepository.EXPECT().GetLastSet(ctx, &userID).Return(models.Set{
+		mockSessionRepository.EXPECT().GetLastSet(ctx, &userID).Return(&models.Set{
 			ExerciseID: &exerciseID,
 			WeightKG:   60.0,
 			Reps:       5,
 		}, nil)
 		stype := "workout"
-		mockSessionRepository.EXPECT().GetLastSession(ctx, &userID).Return(models.Session{
+		mockSessionRepository.EXPECT().GetLastSession(ctx, &userID).Return(&models.Session{
 			SessionType: &stype,
 		}, nil)
 		suggestion, err := service.NextSuggestion(ctx, &userID)
@@ -103,13 +103,13 @@ func TestPlanService_NextSuggestion(t *testing.T) {
 		mockSessionRepository := mocks.NewMockSessionRepository(ctrl)
 
 		service := NewPlanService(mockSessionRepository)
-		mockSessionRepository.EXPECT().GetLastSet(ctx, &userID).Return(models.Set{
+		mockSessionRepository.EXPECT().GetLastSet(ctx, &userID).Return(&models.Set{
 			ExerciseID: &exerciseID,
 			WeightKG:   0.0,
 			Reps:       8,
 		}, nil)
 		stype := "upper"
-		mockSessionRepository.EXPECT().GetLastSession(ctx, userID).Return(models.Session{
+		mockSessionRepository.EXPECT().GetLastSession(ctx, &userID).Return(&models.Session{
 			SessionType: &stype,
 		}, nil)
 		suggestion, err := service.NextSuggestion(ctx, &userID)
@@ -122,7 +122,7 @@ func TestPlanService_NextSuggestion(t *testing.T) {
 		defer ctrl.Finish()
 		mockSessionRepository := mocks.NewMockSessionRepository(ctrl)
 
-		mockSessionRepository.EXPECT().GetLastSet(ctx, nil).Return(models.Set{}, errors.New("invalid user ID"))
+		mockSessionRepository.EXPECT().GetLastSet(ctx, nil).Return(nil, errors.New("invalid user ID"))
 
 		service := NewPlanService(mockSessionRepository)
 		_, err := service.NextSuggestion(ctx, nil)

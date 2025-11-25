@@ -43,13 +43,13 @@ func TestAuthService_Signup(t *testing.T) {
 		deps.usersRepo.EXPECT().Create(ctx, email, gomock.Any()).Return(&models.User{ID: &userID, Email: email}, nil)
 		user, token, err := deps.svc.Signup(ctx, email, password)
 		require.NoError(t, err)
-		require.Equal(t, "user-123", user.ID)
+		require.Equal(t, &userID, user.ID)
 		require.NotEmpty(t, token)
 	})
 
 	t.Run("repository error", func(t *testing.T) {
 		deps := newAuthDeps(t)
-		deps.usersRepo.EXPECT().Create(ctx, email, gomock.Any()).Return(models.User{}, errors.New("db error"))
+		deps.usersRepo.EXPECT().Create(ctx, email, gomock.Any()).Return(nil, errors.New("db error"))
 		user, token, err := deps.svc.Signup(ctx, email, password)
 		require.ErrorIs(t, err, ErrCreateUser)
 		require.ErrorContains(t, err, "db error")
@@ -68,13 +68,13 @@ func TestAuthService_Login(t *testing.T) {
 
 		user, token, err := deps.svc.Login(context.Background(), "test@example.com", "password123")
 		require.NoError(t, err)
-		require.Equal(t, "user-123", user.ID)
+		require.Equal(t, &userID, user.ID)
 		require.NotEmpty(t, token)
 	})
 
 	t.Run("user not found", func(t *testing.T) {
 		deps := newAuthDeps(t)
-		deps.usersRepo.EXPECT().FindByEmail(gomock.Any(), "test@example.com").Return(models.User{}, errors.New("user not found"))
+		deps.usersRepo.EXPECT().FindByEmail(gomock.Any(), "test@example.com").Return(nil, errors.New("user not found"))
 		user, token, err := deps.svc.Login(context.Background(), "test@example.com", "password123")
 		require.ErrorIs(t, err, ErrFindUser)
 		require.ErrorContains(t, err, "user not found")

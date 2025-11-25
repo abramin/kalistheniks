@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -76,7 +77,8 @@ func TestUserRepository_FindByID(t *testing.T) {
 
 	t.Run("handles user not found", func(t *testing.T) {
 		repo := NewUserRepository(testDB)
-		_, err := repo.FindByID(context.Background(), "nonexistent-id")
+		userID := uuid.New()
+		_, err := repo.FindByID(context.Background(), &userID)
 		require.Error(t, err)
 		truncateUsers(t)
 	})

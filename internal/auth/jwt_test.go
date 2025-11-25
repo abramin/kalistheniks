@@ -10,7 +10,7 @@ import (
 )
 
 func TestGenerateAndParseToken(t *testing.T) {
-	userID := uuid.Must(uuid.NewUUID())
+	userID := uuid.New()
 	t.Run("round trip success", func(t *testing.T) {
 		secret := "supersecret"
 
@@ -20,7 +20,8 @@ func TestGenerateAndParseToken(t *testing.T) {
 
 		parsedUser, err := ParseToken(token, secret)
 		require.NoError(t, err)
-		require.Equal(t, userID, parsedUser)
+		expected := userID.String()
+		require.Equal(t, expected, parsedUser)
 	})
 
 	t.Run("invalid signature", func(t *testing.T) {
@@ -75,7 +76,7 @@ func TestGenerateAndParseToken(t *testing.T) {
 
 		claims, ok := token.Claims.(*jwt.RegisteredClaims)
 		require.True(t, ok)
-		require.Equal(t, userID, claims.Subject)
+		require.Equal(t, userID.String(), claims.Subject)
 		require.Equal(t, "kalistheniks-api", claims.Issuer)
 		require.Contains(t, claims.Audience, "kalistheniks-users")
 		require.NotEmpty(t, claims.ID)
