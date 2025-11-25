@@ -75,7 +75,7 @@ ORDER BY s.performed_at DESC, st.set_index ASC`
 
 		err = rows.Scan(
 			&s.ID, &s.UserID, &s.PerformedAt, &notes, &sessionType,
-			&setID, &setSessionID, exerciseID, &setIndex, &reps, &weight, &rpe,
+			&setID, &setSessionID, &exerciseID, &setIndex, &reps, &weight, &rpe,
 		)
 		if err != nil {
 			return nil, err
@@ -107,28 +107,30 @@ ORDER BY s.performed_at DESC, st.set_index ASC`
 			if err != nil {
 				return nil, err
 			}
-			sid, err := uuid.Parse(setSessionID.String)
-			if err != nil {
-				return nil, err
-			}
-			eid, err := uuid.Parse(exerciseID.String)
-			if err != nil {
-				return nil, err
-			}
+			if setSessionID.Valid && exerciseID.Valid {
+				sid, err := uuid.Parse(setSessionID.String)
+				if err != nil {
+					return nil, err
+				}
+				eid, err := uuid.Parse(exerciseID.String)
+				if err != nil {
+					return nil, err
+				}
 
-			set := models.Set{
-				ID:         idParsed,
-				SessionID:  sid,
-				ExerciseID: eid,
-				SetIndex:   int(setIndex.Int64),
-				Reps:       int(reps.Int64),
-				WeightKG:   weight.Float64,
+				set := models.Set{
+					ID:         idParsed,
+					SessionID:  sid,
+					ExerciseID: eid,
+					SetIndex:   int(setIndex.Int64),
+					Reps:       int(reps.Int64),
+					WeightKG:   weight.Float64,
+				}
+				if rpe.Valid {
+					value := int(rpe.Int64)
+					set.RPE = &value
+				}
+				session.Sets = append(session.Sets, set)
 			}
-			if rpe.Valid {
-				value := int(rpe.Int64)
-				set.RPE = &value
-			}
-			session.Sets = append(session.Sets, set)
 		}
 	}
 
