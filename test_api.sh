@@ -2,6 +2,24 @@
 
 # Kalistheniks API Test Script
 # This script tests all API endpoints with curl
+#
+# Prerequisites:
+#   - API server running (default: http://localhost:8080)
+#   - PostgreSQL database running with migrations applied
+#   - psql command available for querying exercise IDs
+#
+# Usage:
+#   ./test_api.sh
+#
+# Environment Variables:
+#   BASE_URL     - API base URL (default: http://localhost:8080)
+#   EMAIL        - Test user email (default: auto-generated)
+#   PASSWORD     - Test user password (default: TestPass123!)
+#   DB_HOST      - Database host (default: localhost)
+#   DB_PORT      - Database port (default: 5432)
+#   DB_NAME      - Database name (default: kalistheniks)
+#   DB_USER      - Database user (default: kalistheniks)
+#   DB_PASS      - Database password (default: kalistheniks)
 
 set -e  # Exit on error
 
@@ -131,12 +149,41 @@ fi
 print_success "Session created successfully!"
 print_info "Session ID: $SESSION_ID"
 
-# 4. Add Sets to Session
-print_section "4. Add Sets to Session"
+# 4. Get Exercise IDs from Database
+print_section "4. Get Exercise IDs"
+print_info "Querying database for exercise IDs..."
 
-# Generate some random UUIDs for exercise IDs (in a real scenario, these would be actual exercise IDs)
-EXERCISE_ID_1="a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"  # Bench Press
-EXERCISE_ID_2="b1ffcd88-8b1a-3de7-aa5c-5aa8ac291b22"  # Overhead Press
+# Database connection parameters (use env vars or defaults)
+DB_HOST="${DB_HOST:-localhost}"
+DB_PORT="${DB_PORT:-5432}"
+DB_NAME="${DB_NAME:-kalistheniks}"
+DB_USER="${DB_USER:-kalistheniks}"
+DB_PASS="${DB_PASS:-kalistheniks}"
+
+# Query for Bench Press ID
+EXERCISE_ID_1=$(PGPASSWORD=$DB_PASS psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -t -A -c "SELECT id FROM exercises WHERE name = 'Bench Press' LIMIT 1;" 2>/dev/null)
+
+# Query for Overhead Press ID
+EXERCISE_ID_2=$(PGPASSWORD=$DB_PASS psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -t -A -c "SELECT id FROM exercises WHERE name = 'Overhead Press' LIMIT 1;" 2>/dev/null)
+
+# Query for Back Squat ID
+EXERCISE_ID_3=$(PGPASSWORD=$DB_PASS psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -t -A -c "SELECT id FROM exercises WHERE name = 'Back Squat' LIMIT 1;" 2>/dev/null)
+
+# Check if we got the IDs
+if [ -z "$EXERCISE_ID_1" ] || [ -z "$EXERCISE_ID_2" ] || [ -z "$EXERCISE_ID_3" ]; then
+    print_error "Failed to get exercise IDs from database"
+    print_info "Make sure your database is running and seeded with exercises"
+    print_info "You can run: make migrate-up to apply migrations"
+    exit 1
+fi
+
+print_success "Retrieved exercise IDs:"
+print_info "Bench Press: $EXERCISE_ID_1"
+print_info "Overhead Press: $EXERCISE_ID_2"
+print_info "Back Squat: $EXERCISE_ID_3"
+
+# 5. Add Sets to Session
+print_section "5. Add Sets to Session"
 
 # Add first set
 print_info "Adding Set 1: Bench Press - 80kg x 8 reps (RPE 7)"
@@ -248,8 +295,8 @@ else
     print_error "Failed to add Set 5"
 fi
 
-# 5. List All Sessions
-print_section "5. List All Sessions"
+# 6. List All Sessions
+print_section "6. List All Sessions"
 print_info "Fetching all sessions with sets..."
 
 SESSIONS_RESPONSE=$(curl -s -X GET "$BASE_URL/sessions" \
@@ -261,8 +308,8 @@ echo "$SESSIONS_RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$SESSIONS_
 SESSION_COUNT=$(echo "$SESSIONS_RESPONSE" | grep -oE '"[Ii][Dd]":' | wc -l)
 print_success "Found $SESSION_COUNT session(s)"
 
-# 6. Get Next Plan Suggestion
-print_section "6. Get Next Workout Plan"
+# 7. Get Next Plan Suggestion
+print_section "7. Get Next Workout Plan"
 print_info "Requesting next workout suggestion based on history..."
 
 PLAN_RESPONSE=$(curl -s -X GET "$BASE_URL/plan/next" \
@@ -277,8 +324,8 @@ else
     print_error "Failed to get plan suggestion"
 fi
 
-# 7. Create Another Session (Lower Body)
-print_section "7. Create Second Session (Lower Body)"
+# 8. Create Another Session (Lower Body)
+print_section "8. Create Second Session (Lower Body)"
 print_info "Creating a lower body session to test progression logic..."
 
 SESSION_TIME_2=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -301,10 +348,8 @@ else
     print_success "Second session created successfully!"
     print_info "Session ID: $SESSION_ID_2"
 
-    # Add a set to the lower body session
-    EXERCISE_ID_3="c2ffde77-7a2b-4ef8-bb6d-7cc0cd492c33"  # Squat
-
-    print_info "Adding Set: Squat - 100kg x 5 reps (RPE 8)"
+    # Add a set to the lower body session (using EXERCISE_ID_3 from earlier)
+    print_info "Adding Set: Back Squat - 100kg x 5 reps (RPE 8)"
     SET6_RESPONSE=$(curl -s -X POST "$BASE_URL/sessions/$SESSION_ID_2/sets" \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $TOKEN" \
