@@ -5,12 +5,15 @@ go 1.25
 require (
 	github.com/cucumber/godog v0.15.1
 	github.com/go-chi/chi/v5 v5.0.11
+	github.com/go-chi/cors v1.2.1
+	github.com/go-chi/httprate v0.9.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.40.0
+	github.com/unrolled/secure v1.15.0
 	golang.org/x/crypto v0.43.0
 )
 
@@ -19,6 +22,7 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect

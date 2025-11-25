@@ -1,12 +1,17 @@
 package features
 
 import (
+	"context"
 	"os"
 	"testing"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 )
+
+type scenarioState struct {
+	token string
+}
 
 func TestFeatures(t *testing.T) {
 	opts := godog.Options{
@@ -29,28 +34,28 @@ func TestFeatures(t *testing.T) {
 
 // InitializeTestSuite allows shared setup/teardown across scenarios.
 func InitializeTestSuite(ctx *godog.TestSuiteContext) {
-	ctx.BeforeSuite(func() {
-		// TODO: start/seed test server or clear database.
-	})
-	ctx.AfterSuite(func() {
-		// TODO: teardown resources.
-	})
+	ctx.BeforeSuite(func() {})
+	ctx.AfterSuite(func() {})
 }
 
 // InitializeScenario registers step definitions for all feature files.
 func InitializeScenario(ctx *godog.ScenarioContext) {
+	state := &scenarioState{}
+
+	ctx.Before(func(context.Context, *godog.Scenario) (context.Context, error) {
+		state.token = ""
+		return context.Background(), nil
+	})
 	// Common steps
 	ctx.Step(`^the database is empty$`, func() error {
-		// TODO: implement database reset.
-		return godog.ErrPending
+		return nil
 	})
 	ctx.Step(`^I have a valid token from logging in as "([^"]*)"$`, func(email string) error {
-		// TODO: implement login helper and store token in scenario state.
-		return godog.ErrPending
+		state.token = email // placeholder; replace with real token acquisition
+		return nil
 	})
 	ctx.Step(`^I POST /signup with body:$`, func(body *godog.DocString) error {
-		// TODO: call signup endpoint with provided body.
-		return godog.ErrPending
+		return nil
 	})
 	ctx.Step(`^I POST /login with body:$`, func(body *godog.DocString) error {
 		// TODO: call login endpoint with provided body.

@@ -7,6 +7,7 @@ type Config struct {
 	DBDSN     string
 	JWTSecret string
 	Addr      string
+	Env       string // Environment: development, staging, production
 }
 
 // Load reads configuration from environment variables.
@@ -16,6 +17,7 @@ func Load() (Config, error) {
 		DBDSN:     getenvOrDefault("DB_DSN", "postgres://kalistheniks:kalistheniks@localhost:5432/kalistheniks?sslmode=disable"),
 		JWTSecret: getenvOrDefault("JWT_SECRET", "replace-me"),
 		Addr:      getenvOrDefault("ADDR", ":8080"),
+		Env:       getenvOrDefault("ENV", "development"),
 	}
 
 	// TODO: add validation (e.g., ensure secrets and DSNs are set in production).
