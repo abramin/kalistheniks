@@ -19,7 +19,7 @@ Feature: Create a training session
   Scenario: Session creation fails with missing token
     When I POST /sessions without an Authorization header
     Then the response status should be 401
-    And the response JSON should include "error":"missing token"
+    And the response JSON field "error" should be "missing token"
 
   Scenario: Session creation fails with invalid body
     When I POST /sessions with headers:
@@ -29,4 +29,4 @@ Feature: Create a training session
       {"performed_at":"not-a-timestamp"}
       """
     Then the response status should be 400
-    And the response JSON should include "error":"invalid request body"
+    And the response JSON field "error" should be "invalid request body"

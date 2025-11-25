@@ -24,7 +24,7 @@ Feature: Add sets to a session and list sessions with sets
       {"exercise_id":"deadlift-uuid","set_index":1,"reps":8,"weight_kg":100.0}
       """
     Then the response status should be 500
-    And the response JSON should include an "error" about failing to add set
+    And the response JSON field "error" should contain "failed"
 
   Scenario: Retrieve sessions with nested sets
     Given I have added two sets to session "<session_id>"
@@ -43,4 +43,4 @@ Feature: Add sets to a session and list sessions with sets
     When I GET /sessions with headers:
       | Authorization | Bearer invalid.token |
     Then the response status should be 401
-    And the response JSON should include "error":"invalid token"
+    And the response JSON field "error" should be "invalid token"

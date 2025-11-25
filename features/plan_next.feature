@@ -49,4 +49,4 @@ Feature: Request next workout plan suggestion
   Scenario: Plan request fails with missing token
     When I GET /plan/next without an Authorization header
     Then the response status should be 401
-    And the response JSON should include "error":"missing token"
+    And the response JSON field "error" should be "missing token"
