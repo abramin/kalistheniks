@@ -6,13 +6,14 @@ import (
 	"time"
 
 	"github.com/alexanderramin/kalistheniks/internal/models"
+	"github.com/google/uuid"
 )
 
 type SessionRepository interface {
-	Create(ctx context.Context, s models.Session) (models.Session, error)
-	AddSet(ctx context.Context, set models.Set) (models.Set, error)
-	ListWithSets(ctx context.Context, userID string) ([]models.Session, error)
-	SessionBelongsToUser(ctx context.Context, sessionID, userID string) (bool, error)
+	Create(ctx context.Context, s *models.Session) (*models.Session, error)
+	AddSet(ctx context.Context, set *models.Set) (*models.Set, error)
+	ListWithSets(ctx context.Context, userID *uuid.UUID) ([]*models.Session, error)
+	SessionBelongsToUser(ctx context.Context, sessionID *uuid.UUID, userID *uuid.UUID) (bool, error)
 }
 
 type SessionService struct {
@@ -23,13 +24,13 @@ func NewSessionService(repo SessionRepository) *SessionService {
 	return &SessionService{sessions: repo}
 }
 
-func (s *SessionService) CreateSession(ctx context.Context, userID string, performedAt *time.Time, sessionType *string, notes *string) (models.Session, error) {
+func (s *SessionService) CreateSession(ctx context.Context, userID *uuid.UUID, performedAt *time.Time, sessionType *string, notes *string) (*models.Session, error) {
 	when := time.Now().UTC()
 	if performedAt != nil {
 		when = performedAt.UTC()
 	}
 
-	session := models.Session{
+	session := &models.Session{
 		UserID:      userID,
 		PerformedAt: when,
 		Notes:       notes,
@@ -39,16 +40,16 @@ func (s *SessionService) CreateSession(ctx context.Context, userID string, perfo
 	return s.sessions.Create(ctx, session)
 }
 
-func (s *SessionService) AddSet(ctx context.Context, userID, sessionID, exerciseID string, setIndex, reps int, weight float64, rpe *int) (models.Set, error) {
+func (s *SessionService) AddSet(ctx context.Context, userID *uuid.UUID, sessionID *uuid.UUID, exerciseID *uuid.UUID, setIndex, reps int, weight float64, rpe *int) (*models.Set, error) {
 	owned, err := s.sessions.SessionBelongsToUser(ctx, sessionID, userID)
 	if err != nil {
-		return models.Set{}, err
+		return nil, err
 	}
 	if !owned {
-		return models.Set{}, errors.New("session does not belong to user")
+		return nil, errors.New("session does not belong to user")
 	}
 
-	set := models.Set{
+	set := &models.Set{
 		SessionID:  sessionID,
 		ExerciseID: exerciseID,
 		SetIndex:   setIndex,
@@ -59,6 +60,6 @@ func (s *SessionService) AddSet(ctx context.Context, userID, sessionID, exercise
 	return s.sessions.AddSet(ctx, set)
 }
 
-func (s *SessionService) ListSessions(ctx context.Context, userID string) ([]models.Session, error) {
+func (s *SessionService) ListSessions(ctx context.Context, userID *uuid.UUID) ([]*models.Session, error) {
 	return s.sessions.ListWithSets(ctx, userID)
 }

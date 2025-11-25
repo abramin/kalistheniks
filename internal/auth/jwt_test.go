@@ -5,25 +5,27 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGenerateAndParseToken(t *testing.T) {
+	userID := uuid.New()
 	t.Run("round trip success", func(t *testing.T) {
 		secret := "supersecret"
-		userID := "user-123"
 
-		token, err := GenerateToken(userID, secret)
+		token, err := GenerateToken(&userID, secret)
 		require.NoError(t, err)
 		require.NotEmpty(t, token)
 
 		parsedUser, err := ParseToken(token, secret)
 		require.NoError(t, err)
-		require.Equal(t, userID, parsedUser)
+		expected := userID.String()
+		require.Equal(t, expected, parsedUser)
 	})
 
 	t.Run("invalid signature", func(t *testing.T) {
-		token, err := GenerateToken("user-456", "secret-a")
+		token, err := GenerateToken(&userID, "secret-a")
 		require.NoError(t, err)
 
 		parsedUser, err := ParseToken(token, "secret-b")
@@ -64,9 +66,8 @@ func TestGenerateAndParseToken(t *testing.T) {
 
 	t.Run("token contains correct claims", func(t *testing.T) {
 		secret := "anothersecret"
-		userID := "user-claims"
 
-		tokenString, err := GenerateToken(userID, secret)
+		tokenString, err := GenerateToken(&userID, secret)
 		require.NoError(t, err)
 		token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return []byte(secret), nil
@@ -75,7 +76,7 @@ func TestGenerateAndParseToken(t *testing.T) {
 
 		claims, ok := token.Claims.(*jwt.RegisteredClaims)
 		require.True(t, ok)
-		require.Equal(t, userID, claims.Subject)
+		require.Equal(t, userID.String(), claims.Subject)
 		require.Equal(t, "kalistheniks-api", claims.Issuer)
 		require.Contains(t, claims.Audience, "kalistheniks-users")
 		require.NotEmpty(t, claims.ID)

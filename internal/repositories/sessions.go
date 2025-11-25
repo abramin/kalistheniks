@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/alexanderramin/kalistheniks/internal/models"
+	"github.com/google/uuid"
 )
 
 type SessionRepository struct {
@@ -16,7 +17,7 @@ func NewSessionRepository(db *sql.DB) *SessionRepository {
 	return &SessionRepository{db: db}
 }
 
-func (r *SessionRepository) Create(ctx context.Context, s models.Session) (models.Session, error) {
+func (r *SessionRepository) Create(ctx context.Context, s *models.Session) (*models.Session, error) {
 	const q = `
 INSERT INTO sessions (user_id, performed_at, notes, session_type)
 VALUES ($1, $2, $3, $4)
@@ -25,10 +26,10 @@ RETURNING id, user_id, performed_at, notes, session_type`
 	var created models.Session
 	err := r.db.QueryRowContext(ctx, q, s.UserID, s.PerformedAt, s.Notes, s.SessionType).
 		Scan(&created.ID, &created.UserID, &created.PerformedAt, &created.Notes, &created.SessionType)
-	return created, err
+	return &created, err
 }
 
-func (r *SessionRepository) AddSet(ctx context.Context, set models.Set) (models.Set, error) {
+func (r *SessionRepository) AddSet(ctx context.Context, set *models.Set) (*models.Set, error) {
 	const q = `
 INSERT INTO sets (session_id, exercise_id, set_index, reps, weight_kg, rpe)
 VALUES ($1, $2, $3, $4, $5, $6)
@@ -37,10 +38,10 @@ RETURNING id, session_id, exercise_id, set_index, reps, weight_kg, rpe`
 	var out models.Set
 	err := r.db.QueryRowContext(ctx, q, set.SessionID, set.ExerciseID, set.SetIndex, set.Reps, set.WeightKG, set.RPE).
 		Scan(&out.ID, &out.SessionID, &out.ExerciseID, &out.SetIndex, &out.Reps, &out.WeightKG, &out.RPE)
-	return out, err
+	return &out, err
 }
 
-func (r *SessionRepository) ListWithSets(ctx context.Context, userID string) ([]models.Session, error) {
+func (r *SessionRepository) ListWithSets(ctx context.Context, userID *uuid.UUID) ([]*models.Session, error) {
 	const q = `
 SELECT s.id, s.user_id, s.performed_at, s.notes, s.session_type,
        st.id, st.session_id, st.exercise_id, st.set_index, st.reps, st.weight_kg, st.rpe
@@ -83,7 +84,7 @@ ORDER BY s.performed_at DESC, st.set_index ASC`
 			s.SessionType = &sessionType.String
 		}
 
-		session, ok := sessions[s.ID]
+		session, ok := sessions[s.ID.String()]
 		if !ok {
 			session = &models.Session{
 				ID:          s.ID,
@@ -93,14 +94,38 @@ ORDER BY s.performed_at DESC, st.set_index ASC`
 				SessionType: s.SessionType,
 				Sets:        []models.Set{},
 			}
-			sessions[s.ID] = session
+			sessions[s.ID.String()] = session
 		}
 
 		if setID.Valid {
-			set := models.Set{
-				ID:         setID.String,
-				SessionID:  setSessionID.String,
-				ExerciseID: exerciseID.String,
+			// parse ID
+			idParsed, err := uuid.Parse(setID.String)
+			if err != nil {
+				return nil, err
+			}
+			// parse session ID if present
+			var sessionIDPtr *uuid.UUID
+			if setSessionID.Valid {
+				sid, err := uuid.Parse(setSessionID.String)
+				if err != nil {
+					return nil, err
+				}
+				sessionIDPtr = &sid
+			}
+			// parse exercise ID if present
+			var exerciseIDPtr *uuid.UUID
+			if exerciseID.Valid {
+				eid, err := uuid.Parse(exerciseID.String)
+				if err != nil {
+					return nil, err
+				}
+				exerciseIDPtr = &eid
+			}
+
+			set := &models.Set{
+				ID:         &idParsed,
+				SessionID:  sessionIDPtr,
+				ExerciseID: exerciseIDPtr,
 				SetIndex:   int(setIndex.Int64),
 				Reps:       int(reps.Int64),
 				WeightKG:   weight.Float64,
@@ -109,18 +134,18 @@ ORDER BY s.performed_at DESC, st.set_index ASC`
 				value := int(rpe.Int64)
 				set.RPE = &value
 			}
-			session.Sets = append(session.Sets, set)
+			session.Sets = append(session.Sets, *set)
 		}
 	}
 
-	result := make([]models.Session, 0, len(sessions))
+	result := make([]*models.Session, 0, len(sessions))
 	for _, sess := range sessions {
-		result = append(result, *sess)
+		result = append(result, sess)
 	}
 	return result, rows.Err()
 }
 
-func (r *SessionRepository) GetLastSet(ctx context.Context, userID string) (models.Set, error) {
+func (r *SessionRepository) GetLastSet(ctx context.Context, userID *uuid.UUID) (*models.Set, error) {
 	const q = `
 SELECT st.id, st.session_id, st.exercise_id, st.set_index, st.reps, st.weight_kg, st.rpe
 FROM sets st
@@ -133,12 +158,12 @@ LIMIT 1`
 	err := r.db.QueryRowContext(ctx, q, userID).
 		Scan(&set.ID, &set.SessionID, &set.ExerciseID, &set.SetIndex, &set.Reps, &set.WeightKG, &set.RPE)
 	if errors.Is(err, sql.ErrNoRows) {
-		return models.Set{}, err
+		return nil, err
 	}
-	return set, err
+	return &set, err
 }
 
-func (r *SessionRepository) GetLastSession(ctx context.Context, userID string) (models.Session, error) {
+func (r *SessionRepository) GetLastSession(ctx context.Context, userID *uuid.UUID) (*models.Session, error) {
 	const q = `
 SELECT id, user_id, performed_at, notes, session_type
 FROM sessions
@@ -151,7 +176,7 @@ LIMIT 1`
 	var sessionType sql.NullString
 	err := r.db.QueryRowContext(ctx, q, userID).Scan(&s.ID, &s.UserID, &s.PerformedAt, &notes, &sessionType)
 	if errors.Is(err, sql.ErrNoRows) {
-		return models.Session{}, err
+		return nil, err
 	}
 	if notes.Valid {
 		s.Notes = &notes.String
@@ -159,10 +184,10 @@ LIMIT 1`
 	if sessionType.Valid {
 		s.SessionType = &sessionType.String
 	}
-	return s, err
+	return &s, err
 }
 
-func (r *SessionRepository) SessionBelongsToUser(ctx context.Context, sessionID, userID string) (bool, error) {
+func (r *SessionRepository) SessionBelongsToUser(ctx context.Context, sessionID, userID *uuid.UUID) (bool, error) {
 	const q = `
 SELECT 1
 FROM sessions

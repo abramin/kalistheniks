@@ -10,6 +10,7 @@ import (
 
 	models "github.com/alexanderramin/kalistheniks/internal/models"
 	gomock "github.com/golang/mock/gomock"
+	uuid "github.com/google/uuid"
 )
 
 // MockSessionRepository is a mock of SessionRepository interface.
@@ -36,10 +37,10 @@ func (m *MockSessionRepository) EXPECT() *MockSessionRepositoryMockRecorder {
 }
 
 // GetLastSession mocks base method.
-func (m *MockSessionRepository) GetLastSession(ctx context.Context, userID string) (models.Session, error) {
+func (m *MockSessionRepository) GetLastSession(ctx context.Context, userID *uuid.UUID) (*models.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLastSession", ctx, userID)
-	ret0, _ := ret[0].(models.Session)
+	ret0, _ := ret[0].(*models.Session)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -51,10 +52,10 @@ func (mr *MockSessionRepositoryMockRecorder) GetLastSession(ctx, userID interfac
 }
 
 // GetLastSet mocks base method.
-func (m *MockSessionRepository) GetLastSet(ctx context.Context, userID string) (models.Set, error) {
+func (m *MockSessionRepository) GetLastSet(ctx context.Context, userID *uuid.UUID) (*models.Set, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLastSet", ctx, userID)
-	ret0, _ := ret[0].(models.Set)
+	ret0, _ := ret[0].(*models.Set)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
