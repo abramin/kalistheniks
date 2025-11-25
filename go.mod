@@ -1,6 +1,6 @@
 module github.com/alexanderramin/kalistheniks
 
-go 1.25
+go 1.24
 
 require (
 	github.com/cucumber/godog v0.15.1
