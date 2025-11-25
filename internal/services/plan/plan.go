@@ -3,14 +3,15 @@ package plan
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/alexanderramin/kalistheniks/internal/models"
 	"github.com/google/uuid"
 )
 
 type SessionRepository interface {
-	GetLastSet(ctx context.Context, userID *uuid.UUID) (*models.Set, error)
-	GetLastSession(ctx context.Context, userID *uuid.UUID) (*models.Session, error)
+	GetLastSet(ctx context.Context, userID uuid.UUID) (*models.Set, error)
+	GetLastSession(ctx context.Context, userID uuid.UUID) (*models.Session, error)
 }
 
 // PlanService holds simple V1 progression logic.
@@ -24,14 +25,17 @@ func NewPlanService(repo SessionRepository) *PlanService {
 
 // TODO: replace with a proper rule engine integration.
 // NextSuggestion returns a naive progression recommendation based on the last recorded set.
-func (p *PlanService) NextSuggestion(ctx context.Context, userID *uuid.UUID) (*models.PlanSuggestion, error) {
+func (p *PlanService) NextSuggestion(ctx context.Context, userID uuid.UUID) (*models.PlanSuggestion, error) {
+	if userID == uuid.Nil {
+		return nil, errors.New("invalid user ID")
+	}
 	lastSet, err := p.sessions.GetLastSet(ctx, userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// No history: start with a default.
 			id := uuid.New()
 			return &models.PlanSuggestion{
-				ExerciseID: &id,
+				ExerciseID: id,
 				WeightKG:   20,
 				Reps:       8,
 				Notes:      "No history found; starting default weight and reps.",

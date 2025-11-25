@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/alexanderramin/kalistheniks/internal/auth"
 	"github.com/alexanderramin/kalistheniks/internal/models"
+	t "github.com/alexanderramin/kalistheniks/internal/token"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -48,7 +48,7 @@ func (s *AuthService) Signup(ctx context.Context, email, password string) (*mode
 		return nil, "", fmt.Errorf("%w: %v", ErrCreateUser, err)
 	}
 
-	token, err := auth.GenerateToken(user.ID, s.jwtSecret)
+	token, err := t.GenerateToken(user.ID, s.jwtSecret)
 	if err != nil {
 		return nil, "", fmt.Errorf("%w: %v", ErrGenerateToken, err)
 	}
@@ -65,7 +65,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*model
 		return nil, "", ErrInvalidCredentials
 	}
 
-	token, err := auth.GenerateToken(user.ID, s.jwtSecret)
+	token, err := t.GenerateToken(user.ID, s.jwtSecret)
 	if err != nil {
 		return nil, "", fmt.Errorf("%w: %v", ErrGenerateToken, err)
 	}
@@ -73,7 +73,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*model
 }
 
 func (s *AuthService) VerifyToken(_ context.Context, token string) (string, error) {
-	userID, err := auth.ParseToken(token, s.jwtSecret)
+	userID, err := t.ParseToken(token, s.jwtSecret)
 	if err != nil {
 		return "", fmt.Errorf("%w: %v", ErrParseToken, err)
 	}

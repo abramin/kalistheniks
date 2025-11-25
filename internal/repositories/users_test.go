@@ -78,7 +78,7 @@ func TestUserRepository_FindByID(t *testing.T) {
 	t.Run("handles user not found", func(t *testing.T) {
 		repo := NewUserRepository(testDB)
 		userID := uuid.New()
-		_, err := repo.FindByID(context.Background(), &userID)
+		_, err := repo.FindByID(context.Background(), userID)
 		require.Error(t, err)
 		truncateUsers(t)
 	})

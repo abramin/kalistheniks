@@ -67,7 +67,7 @@ func (mr *MockSessionRepositoryMockRecorder) Create(ctx, s interface{}) *gomock.
 }
 
 // ListWithSets mocks base method.
-func (m *MockSessionRepository) ListWithSets(ctx context.Context, userID *uuid.UUID) ([]*models.Session, error) {
+func (m *MockSessionRepository) ListWithSets(ctx context.Context, userID uuid.UUID) ([]*models.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListWithSets", ctx, userID)
 	ret0, _ := ret[0].([]*models.Session)
@@ -82,7 +82,7 @@ func (mr *MockSessionRepositoryMockRecorder) ListWithSets(ctx, userID interface{
 }
 
 // SessionBelongsToUser mocks base method.
-func (m *MockSessionRepository) SessionBelongsToUser(ctx context.Context, sessionID, userID *uuid.UUID) (bool, error) {
+func (m *MockSessionRepository) SessionBelongsToUser(ctx context.Context, sessionID, userID uuid.UUID) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SessionBelongsToUser", ctx, sessionID, userID)
 	ret0, _ := ret[0].(bool)

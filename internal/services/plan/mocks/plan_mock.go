@@ -37,7 +37,7 @@ func (m *MockSessionRepository) EXPECT() *MockSessionRepositoryMockRecorder {
 }
 
 // GetLastSession mocks base method.
-func (m *MockSessionRepository) GetLastSession(ctx context.Context, userID *uuid.UUID) (*models.Session, error) {
+func (m *MockSessionRepository) GetLastSession(ctx context.Context, userID uuid.UUID) (*models.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLastSession", ctx, userID)
 	ret0, _ := ret[0].(*models.Session)
@@ -52,7 +52,7 @@ func (mr *MockSessionRepositoryMockRecorder) GetLastSession(ctx, userID interfac
 }
 
 // GetLastSet mocks base method.
-func (m *MockSessionRepository) GetLastSet(ctx context.Context, userID *uuid.UUID) (*models.Set, error) {
+func (m *MockSessionRepository) GetLastSet(ctx context.Context, userID uuid.UUID) (*models.Set, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLastSet", ctx, userID)
 	ret0, _ := ret[0].(*models.Set)
