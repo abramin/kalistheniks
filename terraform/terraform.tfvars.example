@@ -1,0 +1,31 @@
+# Copy this file to terraform.tfvars and fill in your values
+# Note: terraform.tfvars is gitignored for security
+
+# AWS Configuration
+aws_region  = "us-east-1"
+environment = "dev"
+
+# Project
+project_name = "kalistheniks"
+
+# Network Configuration (optional, defaults are sensible)
+# vpc_cidr              = "10.0.0.0/16"
+# public_subnet_cidr    = "10.0.1.0/24"
+# private_subnet_cidr   = "10.0.2.0/24"
+# availability_zone_a   = "us-east-1a"
+# availability_zone_b   = "us-east-1b"
+
+# Database Configuration
+db_instance_class = "db.t3.micro"
+db_name           = "kalistheniks"
+db_username       = "kalistheniks_admin"
+db_password       = "CHANGE_ME_TO_STRONG_PASSWORD"  # Use a strong, random password
+
+# Application Secrets
+jwt_secret = "CHANGE_ME_TO_RANDOM_SECRET"  # Use a strong, random secret (min 32 chars recommended)
+
+# ECS Configuration (optional, defaults are sensible)
+# container_port    = 8080
+# container_cpu     = 256
+# container_memory  = 512
+# desired_count     = 1
